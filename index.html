@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0a0f1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GioKri Monitor">
+<title>GioKri Monitor — Controllo consumi energetici</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg:       #0a0f1e;
+  --bg2:      #111827;
+  --bg3:      #1a2235;
+  --surface:  #1e2d45;
+  --border:   #2a3f5f;
+  --amber:    #f59e0b;
+  --amber-d:  #b45309;
+  --amber-l:  #fcd34d;
+  --blue:     #3b82f6;
+  --blue-l:   #93c5fd;
+  --green:    #10b981;
+  --green-l:  #6ee7b7;
+  --red:      #ef4444;
+  --red-l:    #fca5a5;
+  --text:     #f1f5f9;
+  --text2:    #94a3b8;
+  --text3:    #475569;
+  --r:        14px;
+  --r2:       20px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: 'DM Mono', monospace;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── LOGIN ── */
+#login-screen {
+  position: fixed; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg);
+  z-index: 100;
+  padding: 2rem;
+}
+.login-card {
+  width: 100%; max-width: 360px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 2.5rem 2rem;
+  position: relative;
+  overflow: hidden;
+}
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, rgba(245,158,11,.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+.login-logo {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: .25rem;
+  letter-spacing: -0.03em;
+}
+.login-logo span { color: var(--amber); }
+.login-sub { font-size: 12px; color: var(--text2); margin-bottom: 2rem; }
+.login-label { font-size: 11px; color: var(--text2); margin-bottom: 5px; letter-spacing: .08em; }
+.login-input {
+  width: 100%; padding: 11px 14px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text);
+  font-family: 'DM Mono', monospace; font-size: 14px;
+  margin-bottom: 1rem; outline: none;
+  transition: border-color .2s;
+}
+.login-input:focus { border-color: var(--amber); }
+.login-btn {
+  width: 100%; padding: 12px;
+  background: var(--amber); color: var(--bg);
+  border: none; border-radius: 10px;
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all .2s; letter-spacing: .02em;
+}
+.login-btn:hover { background: var(--amber-l); transform: translateY(-1px); }
+.login-err { color: var(--red); font-size: 12px; margin-top: .5rem; min-height: 1.2em; }
+
+/* ── APP SHELL ── */
+#app { display: none; flex-direction: column; height: 100vh; }
+#app.visible { display: flex; }
+
+/* ── HEADER ── */
+.app-header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: .75rem 1.25rem;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.app-logo { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em; }
+.app-logo span { color: var(--amber); }
+.user-badge {
+  display: flex; align-items: center; gap: .5rem;
+  font-size: 12px; color: var(--text2);
+}
+.user-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+.logout-btn {
+  background: none; border: none; color: var(--text3);
+  cursor: pointer; font-size: 12px; font-family: 'DM Mono', monospace;
+  transition: color .2s;
+}
+.logout-btn:hover { color: var(--red); }
+
+/* ── SCROLL AREA ── */
+.app-body { flex: 1; overflow-y: auto; padding: 1rem; }
+
+/* ── TABS ── */
+.tabs { display: flex; gap: 4px; margin-bottom: 1rem; background: var(--bg2); border-radius: 12px; padding: 4px; border: 1px solid var(--border); }
+.tab {
+  flex: 1; padding: 8px 4px; text-align: center;
+  border-radius: 9px; border: none; background: none;
+  color: var(--text2); font-family: 'DM Mono', monospace; font-size: 12px;
+  cursor: pointer; transition: all .2s; letter-spacing: .02em;
+}
+.tab.active { background: var(--surface); color: var(--text); }
+.tab-content { display: none; }
+.tab-content.active { display: block; animation: fadeIn .25s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── CARDS ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.card-title {
+  font-family: 'Syne', sans-serif;
+  font-size: .9rem; font-weight: 700;
+  color: var(--text); margin-bottom: 1rem;
+  letter-spacing: -.01em;
+}
+.card-label { font-size: 10px; color: var(--text3); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 4px; }
+
+/* ── KPI GRID ── */
+.kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .75rem; margin-bottom: 1rem; }
+.kpi {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--r); padding: 1rem;
+  position: relative; overflow: hidden;
+}
+.kpi::before {
+  content: ''; position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+}
+.kpi.luce::before { background: var(--amber); }
+.kpi.gas::before { background: var(--blue); }
+.kpi.saving::before { background: var(--green); }
+.kpi.trend::before { background: var(--text3); }
+.kpi-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.5rem; font-weight: 800;
+  line-height: 1; margin-bottom: .3rem;
+}
+.kpi-lbl { font-size: 11px; color: var(--text2); }
+.kpi-delta { font-size: 11px; margin-top: .3rem; display: flex; align-items: center; gap: 3px; }
+.delta-up { color: var(--red); }
+.delta-down { color: var(--green); }
+.delta-eq { color: var(--text3); }
+
+/* ── CHART ── */
+.chart-wrap { position: relative; width: 100%; height: 200px; margin: .5rem 0; }
+
+/* ── FORM ── */
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-bottom: .75rem; }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-group.full { grid-column: 1/-1; }
+.form-label { font-size: 10px; color: var(--text2); letter-spacing: .08em; text-transform: uppercase; }
+.form-input, .form-select {
+  padding: 10px 12px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 9px; color: var(--text);
+  font-family: 'DM Mono', monospace; font-size: 13px;
+  outline: none; transition: border-color .2s; width: 100%;
+}
+.form-input:focus, .form-select:focus { border-color: var(--amber); }
+.form-select option { background: var(--bg2); }
+.btn-add {
+  width: 100%; padding: 11px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text);
+  font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+  cursor: pointer; margin-top: .5rem; transition: all .2s;
+}
+.btn-add:hover { background: var(--amber); color: var(--bg); border-color: var(--amber); }
+
+/* ── STORICO ── */
+.bolletta-item {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 12px; padding: .85rem 1rem;
+  display: flex; align-items: center; gap: .75rem;
+  margin-bottom: .5rem;
+}
+.boll-tipo {
+  width: 36px; height: 36px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem; flex-shrink: 0;
+}
+.boll-tipo.luce { background: rgba(245,158,11,.15); }
+.boll-tipo.gas  { background: rgba(59,130,246,.15); }
+.boll-info { flex: 1; min-width: 0; }
+.boll-periodo { font-size: 12px; color: var(--text); font-weight: 500; }
+.boll-dettagli { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.boll-importo { text-align: right; flex-shrink: 0; }
+.boll-euro { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; }
+.boll-kwh { font-size: 11px; color: var(--text2); }
+.del-btn { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 16px; padding: 0 4px; }
+.del-btn:hover { color: var(--red); }
+
+/* ── EMPTY STATE ── */
+.empty { text-align: center; padding: 2.5rem 1rem; color: var(--text3); }
+.empty-ico { font-size: 2.5rem; margin-bottom: .75rem; }
+.empty-txt { font-size: 13px; line-height: 1.6; }
+
+/* ── BADGE ── */
+.badge {
+  display: inline-block; font-size: 10px; padding: 2px 8px;
+  border-radius: 99px; font-weight: 500; letter-spacing: .04em;
+}
+.badge-luce { background: rgba(245,158,11,.15); color: var(--amber); border: 1px solid rgba(245,158,11,.3); }
+.badge-gas  { background: rgba(59,130,246,.15);  color: var(--blue-l); border: 1px solid rgba(59,130,246,.3); }
+
+/* ── TOGGLE ── */
+.toggle-row { display: flex; gap: 6px; margin-bottom: 1rem; }
+.toggle-btn {
+  flex: 1; padding: 7px 4px; text-align: center;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: none; color: var(--text2);
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  cursor: pointer; transition: all .2s;
+}
+.toggle-btn.sel-luce { background: rgba(245,158,11,.15); color: var(--amber); border-color: rgba(245,158,11,.4); }
+.toggle-btn.sel-gas  { background: rgba(59,130,246,.15);  color: var(--blue-l); border-color: rgba(59,130,246,.4); }
+
+/* ── INSTALL BANNER ── */
+.install-banner {
+  display: none;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: .85rem 1rem;
+  margin-bottom: 1rem;
+  align-items: center; gap: .75rem;
+}
+.install-banner.show { display: flex; }
+.install-text { flex: 1; font-size: 12px; color: var(--text2); line-height: 1.5; }
+.install-btn {
+  background: var(--amber); color: var(--bg);
+  border: none; border-radius: 8px; padding: 7px 14px;
+  font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700;
+  cursor: pointer; flex-shrink: 0;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+/* ── BOTTOM NAV (mobile) ── */
+.bottom-nav {
+  background: var(--bg2); border-top: 1px solid var(--border);
+  display: flex; flex-shrink: 0;
+}
+.bnav-btn {
+  flex: 1; padding: .75rem .5rem;
+  background: none; border: none;
+  color: var(--text3); cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  transition: color .2s;
+}
+.bnav-btn.active { color: var(--amber); }
+.bnav-ico { font-size: 1.2rem; }
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">GioKri<span>.</span>Monitor</div>
+    <div class="login-sub">Accesso riservato ai clienti GioKri Life</div>
+    <div class="login-label">Email</div>
+    <input class="login-input" type="email" id="l-email" placeholder="tuaemail@esempio.it" autocomplete="email">
+    <div class="login-label">Password</div>
+    <input class="login-input" type="password" id="l-pwd" placeholder="••••••••" autocomplete="current-password">
+    <button class="login-btn" onclick="doLogin()">Accedi →</button>
+    <div class="login-err" id="login-err"></div>
+    <div style="margin-top:1.5rem;font-size:11px;color:var(--text3);text-align:center;line-height:1.6">
+      Accesso fornito da GioKri Life Consulenti<br>
+      <a href="mailto:giokrilife@gmail.com" style="color:var(--amber);text-decoration:none">giokrilife@gmail.com</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app">
+
+  <!-- Header -->
+  <div class="app-header">
+    <div class="app-logo">GioKri<span>.</span>Monitor</div>
+    <div class="user-badge">
+      <div class="user-dot"></div>
+      <span id="user-name">—</span>
+      <button class="logout-btn" onclick="doLogout()">esci</button>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="app-body">
+
+    <!-- Install banner -->
+    <div class="install-banner" id="install-banner">
+      <div class="install-text">📱 Installa l'app sul tuo telefono per accedervi sempre, anche offline.</div>
+      <button class="install-btn" id="install-btn">Installa</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
+      <button class="tab" onclick="switchTab('inserisci')">+ Bolletta</button>
+      <button class="tab" onclick="switchTab('storico')">Storico</button>
+    </div>
+
+    <!-- ── DASHBOARD ── -->
+    <div class="tab-content active" id="tab-dashboard">
+
+      <!-- Toggle luce/gas -->
+      <div class="toggle-row">
+        <button class="toggle-btn sel-luce" id="tog-luce" onclick="selToggle('Luce')">💡 Luce</button>
+        <button class="toggle-btn" id="tog-gas" onclick="selToggle('Gas')">🔥 Gas</button>
+        <button class="toggle-btn" id="tog-all" onclick="selToggle('Tutti')">⚡ Tutti</button>
+      </div>
+
+      <!-- KPI -->
+      <div class="kpi-grid" id="kpi-grid">
+        <div class="kpi luce">
+          <div class="card-label">Spesa totale</div>
+          <div class="kpi-val" id="kpi-spesa">—</div>
+          <div class="kpi-lbl">anno corrente</div>
+        </div>
+        <div class="kpi gas">
+          <div class="card-label">Consumi totali</div>
+          <div class="kpi-val" id="kpi-cons">—</div>
+          <div class="kpi-lbl" id="kpi-cons-lbl">kWh / Smc</div>
+        </div>
+        <div class="kpi saving">
+          <div class="card-label">Media mensile</div>
+          <div class="kpi-val" id="kpi-media">—</div>
+          <div class="kpi-lbl">€/mese</div>
+        </div>
+        <div class="kpi trend">
+          <div class="card-label">vs anno prec.</div>
+          <div class="kpi-val" id="kpi-trend">—</div>
+          <div class="kpi-lbl" id="kpi-trend-lbl">variazione %</div>
+        </div>
+      </div>
+
+      <!-- Grafico spesa -->
+      <div class="card">
+        <div class="card-title">Spesa mensile (€)</div>
+        <div class="chart-wrap"><canvas id="chart-spesa"></canvas></div>
+        <div style="display:flex;gap:12px;font-size:11px;color:var(--text2);margin-top:4px;flex-wrap:wrap">
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--amber);display:inline-block"></span>Anno corrente</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--text3);display:inline-block"></span>Anno precedente</span>
+        </div>
+      </div>
+
+      <!-- Grafico consumi -->
+      <div class="card">
+        <div class="card-title">Consumi mensili (kWh / Smc)</div>
+        <div class="chart-wrap"><canvas id="chart-cons"></canvas></div>
+      </div>
+
+    </div>
+
+    <!-- ── INSERISCI ── -->
+    <div class="tab-content" id="tab-inserisci">
+      <div class="card">
+        <div class="card-title">Nuova bolletta</div>
+        <div class="form-row">
+          <div class="form-group">
+            <div class="form-label">Tipo</div>
+            <select class="form-select" id="f-tipo">
+              <option value="Luce">💡 Luce</option>
+              <option value="Gas">🔥 Gas</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <div class="form-label">Mese / Anno</div>
+            <input type="month" class="form-input" id="f-mese">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <div class="form-label">Consumi (kWh o Smc)</div>
+            <input type="number" class="form-input" id="f-consumi" placeholder="es. 320" min="0" step="0.01">
+          </div>
+          <div class="form-group">
+            <div class="form-label">Importo totale (€)</div>
+            <input type="number" class="form-input" id="f-importo" placeholder="es. 128.80" min="0" step="0.01">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <div class="form-label">Tariffa (€/kWh o €/Smc)</div>
+            <input type="number" class="form-input" id="f-tariffa" placeholder="es. 0.1882" min="0" step="0.0001">
+          </div>
+          <div class="form-group">
+            <div class="form-label">Quota fissa (€/mese)</div>
+            <input type="number" class="form-input" id="f-quota" placeholder="es. 10.00" min="0" step="0.01">
+          </div>
+        </div>
+        <div class="form-group full" style="margin-bottom:.75rem">
+          <div class="form-label">Note (opzionale)</div>
+          <input type="text" class="form-input" id="f-note" placeholder="es. conguaglio, stima...">
+        </div>
+        <button class="btn-add" onclick="aggiungiBolletta()">+ Salva bolletta</button>
+      </div>
+    </div>
+
+    <!-- ── STORICO ── -->
+    <div class="tab-content" id="tab-storico">
+      <div class="card">
+        <div class="card-title">Storico bollette</div>
+        <div id="storico-list"></div>
+      </div>
+    </div>
+
+  </div><!-- end app-body -->
+</div><!-- end app -->
+
+<script>
+// ══════════════════════════════════════════
+// UTENTI (email:password — modifica qui)
+// ══════════════════════════════════════════
+const UTENTI = {
+  'giokrilife@gmail.com': { pwd: 'giokri2026', nome: 'GioKri Life' },
+  'cliente1@gmail.com':   { pwd: 'cliente001', nome: 'Mario Rossi' },
+  'cliente2@gmail.com':   { pwd: 'cliente002', nome: 'Elena Bianchi' },
+  'cliente3@gmail.com':   { pwd: 'cliente003', nome: 'Bar Da Mario' },
+};
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+let currentUser = null;
+let filtro = 'Luce';
+let chartSpesa = null;
+let chartCons = null;
+let deferredPrompt = null;
+
+// ══════════════════════════════════════════
+// LOGIN / LOGOUT
+// ══════════════════════════════════════════
+function doLogin() {
+  const email = document.getElementById('l-email').value.trim().toLowerCase();
+  const pwd   = document.getElementById('l-pwd').value;
+  const err   = document.getElementById('login-err');
+
+  const user = UTENTI[email];
+  if (!user || user.pwd !== pwd) {
+    err.textContent = 'Email o password non corretti.';
+    return;
+  }
+
+  currentUser = { email, nome: user.nome };
+  localStorage.setItem('gk_user', JSON.stringify(currentUser));
+
+  err.textContent = '';
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  document.getElementById('user-name').textContent = user.nome;
+
+  renderAll();
+}
+
+function doLogout() {
+  currentUser = null;
+  localStorage.removeItem('gk_user');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').classList.remove('visible');
+}
+
+// Auto-login se sessione salvata
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('gk_user');
+  if (saved) {
+    try {
+      currentUser = JSON.parse(saved);
+      if (UTENTI[currentUser.email]) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app').classList.add('visible');
+        document.getElementById('user-name').textContent = currentUser.nome;
+        renderAll();
+      }
+    } catch(e) {}
+  }
+});
+
+// ══════════════════════════════════════════
+// DATI (localStorage per utente)
+// ══════════════════════════════════════════
+function getKey() { return `gk_bollette_${currentUser.email}`; }
+
+function getBollette() {
+  try {
+    const raw = localStorage.getItem(getKey());
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+function saveBollette(arr) {
+  localStorage.setItem(getKey(), JSON.stringify(arr));
+}
+
+// ══════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach((b,i) => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  const idx = ['dashboard','inserisci','storico'].indexOf(id);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+  if (id === 'dashboard') renderDashboard();
+  if (id === 'storico') renderStorico();
+}
+
+// ══════════════════════════════════════════
+// TOGGLE LUCE/GAS/TUTTI
+// ══════════════════════════════════════════
+function selToggle(val) {
+  filtro = val;
+  ['Luce','Gas','Tutti'].forEach(v => {
+    const id = 'tog-' + v.toLowerCase();
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('sel-luce','sel-gas');
+    if (v === val) {
+      if (v === 'Luce') el.classList.add('sel-luce');
+      else if (v === 'Gas') el.classList.add('sel-gas');
+      else { el.style.background='rgba(100,100,100,.2)'; el.style.color='var(--text)'; }
+    } else {
+      el.style.background = '';
+      el.style.color = '';
+    }
+  });
+  renderDashboard();
+}
+
+// ══════════════════════════════════════════
+// AGGIUNGI BOLLETTA
+// ══════════════════════════════════════════
+function aggiungiBolletta() {
+  const tipo    = document.getElementById('f-tipo').value;
+  const mese    = document.getElementById('f-mese').value;
+  const consumi = parseFloat(document.getElementById('f-consumi').value);
+  const importo = parseFloat(document.getElementById('f-importo').value);
+  const tariffa = parseFloat(document.getElementById('f-tariffa').value) || null;
+  const quota   = parseFloat(document.getElementById('f-quota').value) || null;
+  const note    = document.getElementById('f-note').value.trim();
+
+  if (!mese || isNaN(consumi) || isNaN(importo)) {
+    alert('Inserisci almeno mese, consumi e importo.');
+    return;
+  }
+
+  const arr = getBollette();
+  arr.push({ id: Date.now(), tipo, mese, consumi, importo, tariffa, quota, note });
+  arr.sort((a,b) => a.mese.localeCompare(b.mese));
+  saveBollette(arr);
+
+  ['f-mese','f-consumi','f-importo','f-tariffa','f-quota','f-note'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+
+  alert('Bolletta salvata!');
+  switchTab('dashboard');
+}
+
+// ══════════════════════════════════════════
+// RENDER DASHBOARD
+// ══════════════════════════════════════════
+function renderAll() { renderDashboard(); renderStorico(); }
+
+function renderDashboard() {
+  const all = getBollette();
+  const now = new Date();
+  const annoC = now.getFullYear();
+  const annoP = annoC - 1;
+
+  const filtered = filtro === 'Tutti' ? all : all.filter(b => b.tipo === filtro);
+  const corrente = filtered.filter(b => b.mese.startsWith(String(annoC)));
+  const prec     = filtered.filter(b => b.mese.startsWith(String(annoP)));
+
+  const totC = corrente.reduce((s,b) => s+b.importo, 0);
+  const totP = prec.reduce((s,b) => s+b.importo, 0);
+  const consC = corrente.reduce((s,b) => s+b.consumi, 0);
+  const mediaC = corrente.length ? totC/corrente.length : 0;
+  const delta = totP > 0 ? ((totC-totP)/totP*100) : null;
+
+  const unit = filtro === 'Gas' ? 'Smc' : filtro === 'Luce' ? 'kWh' : 'kWh/Smc';
+
+  document.getElementById('kpi-spesa').textContent = totC > 0 ? '€ ' + fmt(totC) : '—';
+  document.getElementById('kpi-cons').textContent  = consC > 0 ? fmt(consC,0) : '—';
+  document.getElementById('kpi-cons-lbl').textContent = unit;
+  document.getElementById('kpi-media').textContent = mediaC > 0 ? '€ ' + fmt(mediaC) : '—';
+
+  const trendEl = document.getElementById('kpi-trend');
+  const trendLbl = document.getElementById('kpi-trend-lbl');
+  if (delta !== null) {
+    const sign = delta > 0 ? '+' : '';
+    trendEl.textContent = sign + fmt(delta,1) + '%';
+    trendEl.style.color = delta > 0 ? 'var(--red)' : delta < 0 ? 'var(--green)' : 'var(--text)';
+    trendLbl.textContent = delta > 0 ? '↑ spesa aumentata' : '↓ spesa diminuita';
+  } else {
+    trendEl.textContent = '—';
+    trendLbl.textContent = 'nessun dato prec.';
+  }
+
+  buildCharts(filtered, annoC, annoP);
+}
+
+function buildCharts(filtered, annoC, annoP) {
+  const mesi = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+
+  // Dati per mese
+  const spesaC = Array(12).fill(null);
+  const spesaP = Array(12).fill(null);
+  const consC  = Array(12).fill(null);
+
+  filtered.forEach(b => {
+    const [y, m] = b.mese.split('-').map(Number);
+    const idx = m - 1;
+    if (y === annoC) {
+      spesaC[idx] = (spesaC[idx] || 0) + b.importo;
+      consC[idx]  = (consC[idx] || 0) + b.consumi;
+    }
+    if (y === annoP) spesaP[idx] = (spesaP[idx] || 0) + b.importo;
+  });
+
+  const opts = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { ticks: { color: '#475569', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+      y: { ticks: { color: '#475569', font: { size: 10 }, callback: v => '€'+v }, grid: { color: 'rgba(255,255,255,0.04)' } }
+    }
+  };
+
+  if (chartSpesa) chartSpesa.destroy();
+  chartSpesa = new Chart(document.getElementById('chart-spesa'), {
+    type: 'bar',
+    data: {
+      labels: mesi,
+      datasets: [
+        { label: 'Anno corrente', data: spesaC, backgroundColor: 'rgba(245,158,11,0.7)', borderColor: '#f59e0b', borderWidth: 1.5, borderRadius: 4 },
+        { label: 'Anno prec.', data: spesaP, backgroundColor: 'rgba(71,85,105,0.5)', borderColor: '#475569', borderWidth: 1, borderRadius: 4 }
+      ]
+    },
+    options: { ...opts }
+  });
+
+  if (chartCons) chartCons.destroy();
+  const unit = filtro === 'Gas' ? 'Smc' : 'kWh';
+  chartCons = new Chart(document.getElementById('chart-cons'), {
+    type: 'line',
+    data: {
+      labels: mesi,
+      datasets: [
+        { label: 'Consumi', data: consC, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#3b82f6', tension: 0.4, fill: true, spanGaps: true }
+      ]
+    },
+    options: {
+      ...opts,
+      scales: {
+        x: opts.scales.x,
+        y: { ticks: { color: '#475569', font: { size: 10 }, callback: v => v+' '+unit }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+// RENDER STORICO
+// ══════════════════════════════════════════
+function renderStorico() {
+  const arr = getBollette().slice().reverse();
+  const el = document.getElementById('storico-list');
+
+  if (!arr.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-ico">📄</div><div class="empty-txt">Nessuna bolletta inserita.<br>Usa la tab "+ Bolletta" per iniziare.</div></div>';
+    return;
+  }
+
+  el.innerHTML = arr.map((b,i) => {
+    const [y,m] = b.mese.split('-');
+    const mesi = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+    const label = mesi[parseInt(m)-1] + ' ' + y;
+    const unit = b.tipo === 'Luce' ? 'kWh' : 'Smc';
+    return `<div class="bolletta-item">
+      <div class="boll-tipo ${b.tipo.toLowerCase()}">${b.tipo === 'Luce' ? '💡' : '🔥'}</div>
+      <div class="boll-info">
+        <div class="boll-periodo">${label} <span class="badge badge-${b.tipo.toLowerCase()}">${b.tipo}</span></div>
+        <div class="boll-dettagli">${fmt(b.consumi,0)} ${unit}${b.tariffa ? ' · ' + fmt(b.tariffa,4) + ' €/'+unit : ''}${b.note ? ' · ' + b.note : ''}</div>
+      </div>
+      <div class="boll-importo">
+        <div class="boll-euro" style="color:${b.tipo==='Luce'?'var(--amber)':'var(--blue-l)'}">€ ${fmt(b.importo)}</div>
+        <div class="boll-kwh">${b.quota ? 'Q.fissa ' + fmt(b.quota) + ' €' : ''}</div>
+      </div>
+      <button class="del-btn" onclick="delBolletta(${b.id})">×</button>
+    </div>`;
+  }).join('');
+}
+
+function delBolletta(id) {
+  if (!confirm('Eliminare questa bolletta?')) return;
+  const arr = getBollette().filter(b => b.id !== id);
+  saveBollette(arr);
+  renderStorico();
+  renderDashboard();
+}
+
+// ══════════════════════════════════════════
+// PWA INSTALL
+// ══════════════════════════════════════════
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-banner').classList.add('show');
+});
+
+document.getElementById('install-btn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  if (outcome === 'accepted') document.getElementById('install-banner').classList.remove('show');
+  deferredPrompt = null;
+});
+
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+function fmt(n, d=2) {
+  if (n==null||isNaN(n)) return '—';
+  return Number(n).toLocaleString('it-IT', { minimumFractionDigits:d, maximumFractionDigits:d });
+}
+</script>
+
+</body>
+</html>
