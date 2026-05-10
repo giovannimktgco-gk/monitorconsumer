@@ -407,17 +407,37 @@ let deferredPrompt = null;
 // ════════════════════════════════════════
 // API CALLS
 // ════════════════════════════════════════
+const CSV_UTENTI = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSFiztsjRF3mNvMYyT2tEb-oBkhQnWIDBFlPhSbIUmVH7uib2eKZa0uqKL9EvUzxFhwNT8ikYCSu2C-/pub?gid=1202837026&single=true&output=csv';
+
+// Legge utenti dal CSV pubblico Google Sheet
+async function leggiUtenti() {
+  const res = await fetch(CSV_UTENTI + '&t=' + Date.now());
+  const txt = await res.text();
+  const rows = txt.trim().split('\n').slice(1); // salta intestazione
+  return rows.map(r => {
+    const cols = r.split(',').map(c => c.trim().replace(/^"|"$/g,''));
+    return {
+      email:   (cols[0]||'').toLowerCase(),
+      pwd:     cols[1]||'',
+      nome:    cols[2]||'',
+      utenza:  cols[3]||'Domestica',
+      stato:   (cols[4]||'attivo').toLowerCase()
+    };
+  }).filter(u => u.email);
+}
+
+// POST no-cors per salvare bollette
 async function apiPost(params) {
   const body = new URLSearchParams(params);
-  const res = await fetch(API, {
+  await fetch(API, {
     method: 'POST', mode: 'no-cors',
     headers: {'Content-Type':'application/x-www-form-urlencoded'},
     body: body.toString()
   });
-  // no-cors non restituisce il body — usiamo GET per leggere
   return {status:'ok'};
 }
 
+// GET per leggere bollette dal Sheet
 async function apiGet(params) {
   const url = API + '?' + new URLSearchParams(params).toString();
   const res = await fetch(url);
@@ -447,20 +467,25 @@ async function doLogin() {
 
   if (!email || !pwd) { err.textContent = '⚠️ Inserisci email e password.'; return; }
 
-  btn.disabled = true; btn.textContent = 'Accesso in corso...';
+  btn.disabled = true; btn.textContent = 'Verifica in corso...';
   err.textContent = '';
 
   try {
-    const r = await apiGet({azione:'login', email, password:pwd});
-    if (r.status === 'ok') {
-      ME = {email, nome: r.nome, utenza: r.utenza};
-      localStorage.setItem(LS_KEY, JSON.stringify(ME));
-      avvia();
+    const utenti = await leggiUtenti();
+    const u = utenti.find(u => u.email === email && u.pwd === pwd);
+    if (u) {
+      if (u.stato === 'sospeso') {
+        err.textContent = '❌ Account sospeso. Contatta GioKri Life.';
+      } else {
+        ME = {email, nome: u.nome, utenza: u.utenza};
+        localStorage.setItem(LS_KEY, JSON.stringify(ME));
+        avvia();
+      }
     } else {
-      err.textContent = '❌ ' + (r.msg || 'Credenziali non corrette.');
+      err.textContent = '❌ Email o password non corretti.';
     }
   } catch(e) {
-    err.textContent = '❌ Errore di connessione. Riprova.';
+    err.textContent = '❌ Errore di connessione. Riprova tra qualche istante.';
   }
   btn.disabled = false; btn.textContent = 'Accedi →';
 }
@@ -479,24 +504,24 @@ async function doRegister() {
 
   err.textContent = ''; ok.textContent = '';
 
-  if (!nome)           { err.textContent = '⚠️ Inserisci il tuo nome.'; return; }
-  if (!email)          { err.textContent = '⚠️ Inserisci la tua email.'; return; }
-  if (pwd.length < 6)  { err.textContent = '⚠️ Password di almeno 6 caratteri.'; return; }
+  if (!nome)          { err.textContent = '⚠️ Inserisci il tuo nome.'; return; }
+  if (!email)         { err.textContent = '⚠️ Inserisci la tua email.'; return; }
+  if (pwd.length < 6) { err.textContent = '⚠️ Password di almeno 6 caratteri.'; return; }
 
-  btn.disabled = true; btn.textContent = 'Registrazione in corso...';
+  btn.disabled = true; btn.textContent = 'Invio richiesta...';
 
   try {
-    const r = await apiGet({azione:'registra', nome, email, password:pwd, utenza});
-    if (r.status === 'ok') {
-      ok.textContent = '✅ Account creato! Accedi con le tue credenziali.';
-      setTimeout(() => showLogin(), 2000);
-    } else {
-      err.textContent = '❌ ' + (r.msg || 'Errore durante la registrazione.');
-    }
+    // Invia richiesta di registrazione allo script
+    await apiPost({
+      azione: 'registra', nome, email, password: pwd, utenza
+    });
+
+    ok.textContent = '✅ Richiesta inviata! GioKri Life attiverà il tuo account entro 24 ore e ti contatterà via email.';
+    btn.disabled = false; btn.textContent = 'Crea account →';
   } catch(e) {
-    err.textContent = '❌ Errore di connessione. Riprova.';
+    err.textContent = '❌ Errore. Contatta giokrilife@gmail.com per registrarti.';
+    btn.disabled = false; btn.textContent = 'Crea account →';
   }
-  btn.disabled = false; btn.textContent = 'Crea account →';
 }
 
 // ════════════════════════════════════════
