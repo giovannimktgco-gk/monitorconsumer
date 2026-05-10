@@ -3,773 +3,845 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<meta name="theme-color" content="#0a0f1e">
+<meta name="theme-color" content="#1a3c5e">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="GioKri Monitor">
-<title>GioKri Monitor — Controllo consumi energetici</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<title>GioKri Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-:root {
-  --bg:       #0a0f1e;
-  --bg2:      #111827;
-  --bg3:      #1a2235;
-  --surface:  #1e2d45;
-  --border:   #2a3f5f;
-  --amber:    #f59e0b;
-  --amber-d:  #b45309;
-  --amber-l:  #fcd34d;
-  --blue:     #3b82f6;
-  --blue-l:   #93c5fd;
-  --green:    #10b981;
-  --green-l:  #6ee7b7;
-  --red:      #ef4444;
-  --red-l:    #fca5a5;
-  --text:     #f1f5f9;
-  --text2:    #94a3b8;
-  --text3:    #475569;
-  --r:        14px;
-  --r2:       20px;
+:root{
+  --bg:#f5f0e8;--bg2:#fff;--bg3:#ede7d8;--border:#d4c9b5;
+  --amber:#c47d1a;--amber-d:#9a5f0f;--amber-l:#f0a830;--amber-p:#fef5e0;
+  --blue:#1a3c5e;--blue-l:#2a5f94;--blue-p:#e8f1f9;
+  --green:#1d5c3b;--green-l:#2a8556;--green-p:#e4f2ea;
+  --red:#9c2a1e;--red-p:#fdecea;
+  --text:#0f0e0c;--text2:#6b6050;--text3:#a09585;
+  --shadow:0 2px 12px rgba(15,14,12,.08);--shadow-lg:0 8px 32px rgba(15,14,12,.14);
+  --r:14px;--r2:20px;
 }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;-webkit-font-smoothing:antialiased;overflow:hidden}
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; overflow: hidden; }
+/* SCREENS */
+.screen{position:fixed;inset:0;z-index:100;display:none;align-items:center;justify-content:center;padding:1.5rem}
+.screen.show{display:flex}
+#scr-login{background:var(--blue);background-image:radial-gradient(ellipse at 80% 20%,rgba(196,125,26,.2) 0%,transparent 60%)}
+#scr-register{background:var(--blue);background-image:radial-gradient(ellipse at 20% 80%,rgba(196,125,26,.15) 0%,transparent 60%)}
 
-body {
-  font-family: 'DM Mono', monospace;
-  background: var(--bg);
-  color: var(--text);
-  font-size: 14px;
-  -webkit-font-smoothing: antialiased;
-}
+/* AUTH CARD */
+.auth-card{width:100%;max-width:390px;background:#fff;border-radius:var(--r2);padding:2.5rem 2rem;box-shadow:var(--shadow-lg)}
+.auth-logo{font-family:'Fraunces',serif;font-size:1.8rem;font-weight:700;color:var(--blue);letter-spacing:-.02em;margin-bottom:.2rem}
+.auth-logo span{color:var(--amber)}
+.auth-sub{font-size:13px;color:var(--text2);margin-bottom:1.75rem;font-weight:300}
+.lbl{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+.inp{width:100%;padding:11px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;margin-bottom:.9rem;outline:none;transition:border-color .2s}
+.inp:focus{border-color:var(--amber);background:#fff}
+.sel{width:100%;padding:11px 14px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;margin-bottom:.9rem;outline:none}
+.btn-primary{width:100%;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+.btn-primary:hover{background:var(--blue-l);transform:translateY(-1px)}
+.btn-primary:disabled{background:var(--text3);cursor:not-allowed;transform:none}
+.btn-link{background:none;border:none;color:var(--amber);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline;padding:0}
+.auth-err{color:var(--red);font-size:12px;margin-top:.5rem;min-height:1.2em}
+.auth-ok{color:var(--green-l);font-size:12px;margin-top:.5rem;min-height:1.2em}
+.auth-footer{margin-top:1.5rem;font-size:12px;color:var(--text3);text-align:center;line-height:1.7}
+.auth-footer a{color:var(--amber);text-decoration:none}
+.auth-switch{text-align:center;margin-top:1rem;font-size:13px;color:var(--text2)}
 
-/* ── LOGIN ── */
-#login-screen {
-  position: fixed; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--bg);
-  z-index: 100;
-  padding: 2rem;
-}
-.login-card {
-  width: 100%; max-width: 360px;
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: var(--r2);
-  padding: 2.5rem 2rem;
-  position: relative;
-  overflow: hidden;
-}
-.login-card::before {
-  content: '';
-  position: absolute;
-  top: -60px; right: -60px;
-  width: 200px; height: 200px;
-  background: radial-gradient(circle, rgba(245,158,11,.15) 0%, transparent 70%);
-  pointer-events: none;
-}
-.login-logo {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.6rem;
-  font-weight: 800;
-  color: var(--text);
-  margin-bottom: .25rem;
-  letter-spacing: -0.03em;
-}
-.login-logo span { color: var(--amber); }
-.login-sub { font-size: 12px; color: var(--text2); margin-bottom: 2rem; }
-.login-label { font-size: 11px; color: var(--text2); margin-bottom: 5px; letter-spacing: .08em; }
-.login-input {
-  width: 100%; padding: 11px 14px;
-  background: var(--bg3); border: 1px solid var(--border);
-  border-radius: 10px; color: var(--text);
-  font-family: 'DM Mono', monospace; font-size: 14px;
-  margin-bottom: 1rem; outline: none;
-  transition: border-color .2s;
-}
-.login-input:focus { border-color: var(--amber); }
-.login-btn {
-  width: 100%; padding: 12px;
-  background: var(--amber); color: var(--bg);
-  border: none; border-radius: 10px;
-  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
-  cursor: pointer; transition: all .2s; letter-spacing: .02em;
-}
-.login-btn:hover { background: var(--amber-l); transform: translateY(-1px); }
-.login-err { color: var(--red); font-size: 12px; margin-top: .5rem; min-height: 1.2em; }
+/* APP */
+#app{display:none;flex-direction:column;height:100vh}
+#app.visible{display:flex}
 
-/* ── APP SHELL ── */
-#app { display: none; flex-direction: column; height: 100vh; }
-#app.visible { display: flex; }
+/* HEADER */
+.hdr{background:var(--blue);padding:.85rem 1.25rem;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.hdr-logo{font-family:'Fraunces',serif;font-size:1.15rem;font-weight:700;color:#fff;letter-spacing:-.02em}
+.hdr-logo span{color:var(--amber-l)}
+.hdr-r{display:flex;align-items:center;gap:.6rem}
+.chip{display:flex;align-items:center;gap:.4rem;background:rgba(255,255,255,.15);border-radius:99px;padding:4px 10px;font-size:12px;color:rgba(255,255,255,.9)}
+.udot{width:7px;height:7px;border-radius:50%;background:#6ee7b7;flex-shrink:0}
+.btn-out{background:rgba(255,255,255,.12);border:none;color:rgba(255,255,255,.75);cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;padding:4px 10px;border-radius:99px;transition:all .2s}
+.btn-out:hover{background:rgba(255,255,255,.25);color:#fff}
 
-/* ── HEADER ── */
-.app-header {
-  background: var(--bg2);
-  border-bottom: 1px solid var(--border);
-  padding: .75rem 1.25rem;
-  display: flex; align-items: center; justify-content: space-between;
-  flex-shrink: 0;
-}
-.app-logo { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em; }
-.app-logo span { color: var(--amber); }
-.user-badge {
-  display: flex; align-items: center; gap: .5rem;
-  font-size: 12px; color: var(--text2);
-}
-.user-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
-.logout-btn {
-  background: none; border: none; color: var(--text3);
-  cursor: pointer; font-size: 12px; font-family: 'DM Mono', monospace;
-  transition: color .2s;
-}
-.logout-btn:hover { color: var(--red); }
+/* BODY */
+.app-body{flex:1;overflow-y:auto;padding:1rem}
 
-/* ── SCROLL AREA ── */
-.app-body { flex: 1; overflow-y: auto; padding: 1rem; }
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:1rem;background:var(--bg2);border-radius:12px;padding:4px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.tab{flex:1;padding:8px 4px;text-align:center;border-radius:9px;border:none;background:none;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s}
+.tab.active{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(26,60,94,.2)}
+.pane{display:none}
+.pane.active{display:block;animation:fadeUp .25s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
-/* ── TABS ── */
-.tabs { display: flex; gap: 4px; margin-bottom: 1rem; background: var(--bg2); border-radius: 12px; padding: 4px; border: 1px solid var(--border); }
-.tab {
-  flex: 1; padding: 8px 4px; text-align: center;
-  border-radius: 9px; border: none; background: none;
-  color: var(--text2); font-family: 'DM Mono', monospace; font-size: 12px;
-  cursor: pointer; transition: all .2s; letter-spacing: .02em;
-}
-.tab.active { background: var(--surface); color: var(--text); }
-.tab-content { display: none; }
-.tab-content.active { display: block; animation: fadeIn .25s ease; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+/* CARD */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:1.25rem;margin-bottom:1rem;box-shadow:var(--shadow)}
+.card-title{font-family:'Fraunces',serif;font-size:1rem;font-weight:700;color:var(--text);margin-bottom:1rem}
+.sec-lbl{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:.5rem}
 
-/* ── CARDS ── */
-.card {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: var(--r2);
-  padding: 1.25rem;
-  margin-bottom: 1rem;
-}
-.card-title {
-  font-family: 'Syne', sans-serif;
-  font-size: .9rem; font-weight: 700;
-  color: var(--text); margin-bottom: 1rem;
-  letter-spacing: -.01em;
-}
-.card-label { font-size: 10px; color: var(--text3); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 4px; }
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1rem;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi.k-a::before{background:var(--amber)}
+.kpi.k-b::before{background:var(--blue-l)}
+.kpi.k-g::before{background:var(--green-l)}
+.kpi.k-r::before{background:var(--border)}
+.kpi-lbl{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.4rem}
+.kpi-val{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:700;color:var(--text);line-height:1;margin-bottom:.25rem}
+.kpi-sub{font-size:11px;color:var(--text2)}
+.kpi-delta{font-size:11px;margin-top:.3rem;font-weight:600}
+.up{color:var(--red)}.down{color:var(--green-l)}
 
-/* ── KPI GRID ── */
-.kpi-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .75rem; margin-bottom: 1rem; }
-.kpi {
-  background: var(--bg2); border: 1px solid var(--border);
-  border-radius: var(--r); padding: 1rem;
-  position: relative; overflow: hidden;
-}
-.kpi::before {
-  content: ''; position: absolute;
-  top: 0; left: 0; right: 0; height: 2px;
-}
-.kpi.luce::before { background: var(--amber); }
-.kpi.gas::before { background: var(--blue); }
-.kpi.saving::before { background: var(--green); }
-.kpi.trend::before { background: var(--text3); }
-.kpi-val {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.5rem; font-weight: 800;
-  line-height: 1; margin-bottom: .3rem;
-}
-.kpi-lbl { font-size: 11px; color: var(--text2); }
-.kpi-delta { font-size: 11px; margin-top: .3rem; display: flex; align-items: center; gap: 3px; }
-.delta-up { color: var(--red); }
-.delta-down { color: var(--green); }
-.delta-eq { color: var(--text3); }
+/* TOGGLE */
+.tgl-row{display:flex;gap:6px;margin-bottom:1rem}
+.tgl{flex:1;padding:8px 4px;text-align:center;border:1.5px solid var(--border);border-radius:10px;background:var(--bg2);color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s}
+.tgl.ta{background:var(--amber-p);color:var(--amber-d);border-color:var(--amber-l);font-weight:600}
+.tgl.tb{background:var(--blue-p);color:var(--blue);border-color:var(--blue-l);font-weight:600}
+.tgl.tt{background:var(--bg3);color:var(--text);border-color:var(--border);font-weight:600}
 
-/* ── CHART ── */
-.chart-wrap { position: relative; width: 100%; height: 200px; margin: .5rem 0; }
+/* CHART */
+.chart-wrap{position:relative;width:100%;height:185px;margin:.5rem 0}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--text2);margin-top:4px}
+.legend span{display:flex;align-items:center;gap:4px}
+.legend i{width:10px;height:10px;border-radius:2px;display:inline-block;flex-shrink:0}
 
-/* ── FORM ── */
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-bottom: .75rem; }
-.form-group { display: flex; flex-direction: column; gap: 4px; }
-.form-group.full { grid-column: 1/-1; }
-.form-label { font-size: 10px; color: var(--text2); letter-spacing: .08em; text-transform: uppercase; }
-.form-input, .form-select {
-  padding: 10px 12px;
-  background: var(--bg3); border: 1px solid var(--border);
-  border-radius: 9px; color: var(--text);
-  font-family: 'DM Mono', monospace; font-size: 13px;
-  outline: none; transition: border-color .2s; width: 100%;
-}
-.form-input:focus, .form-select:focus { border-color: var(--amber); }
-.form-select option { background: var(--bg2); }
-.btn-add {
-  width: 100%; padding: 11px;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 10px; color: var(--text);
-  font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
-  cursor: pointer; margin-top: .5rem; transition: all .2s;
-}
-.btn-add:hover { background: var(--amber); color: var(--bg); border-color: var(--amber); }
+/* GIUDIZIO BOX */
+.giudizio{border-radius:12px;padding:1rem 1.25rem;margin-bottom:1rem;font-size:14px;font-weight:500;display:flex;align-items:center;gap:.75rem}
+.giudizio.ok{background:var(--green-p);color:var(--green);border:1px solid #a0d4b8}
+.giudizio.warn{background:#fff3cd;color:#7a5c00;border:1px solid #e8d080}
+.giudizio.bad{background:var(--red-p);color:var(--red);border:1px solid #e4a09a}
+.giudizio .ico{font-size:1.4rem;flex-shrink:0}
+.giudizio .txt strong{display:block;font-size:13px;margin-bottom:.2rem}
+.giudizio .txt span{font-size:12px;font-weight:300;line-height:1.5;display:block}
 
-/* ── STORICO ── */
-.bolletta-item {
-  background: var(--bg3); border: 1px solid var(--border);
-  border-radius: 12px; padding: .85rem 1rem;
-  display: flex; align-items: center; gap: .75rem;
-  margin-bottom: .5rem;
-}
-.boll-tipo {
-  width: 36px; height: 36px; border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 1rem; flex-shrink: 0;
-}
-.boll-tipo.luce { background: rgba(245,158,11,.15); }
-.boll-tipo.gas  { background: rgba(59,130,246,.15); }
-.boll-info { flex: 1; min-width: 0; }
-.boll-periodo { font-size: 12px; color: var(--text); font-weight: 500; }
-.boll-dettagli { font-size: 11px; color: var(--text2); margin-top: 2px; }
-.boll-importo { text-align: right; flex-shrink: 0; }
-.boll-euro { font-family: 'Syne', sans-serif; font-size: 1rem; font-weight: 700; }
-.boll-kwh { font-size: 11px; color: var(--text2); }
-.del-btn { background: none; border: none; color: var(--text3); cursor: pointer; font-size: 16px; padding: 0 4px; }
-.del-btn:hover { color: var(--red); }
+/* FORM */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem}
+.fg{display:flex;flex-direction:column;gap:4px}
+.fg.full{grid-column:1/-1}
+.fg-lbl{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+.fg-inp,.fg-sel{padding:10px 12px;background:var(--bg);border:1.5px solid var(--border);border-radius:9px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .2s;width:100%}
+.fg-inp:focus,.fg-sel:focus{border-color:var(--amber);background:#fff}
+.btn-save{width:100%;padding:12px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;margin-top:.5rem;transition:all .2s}
+.btn-save:hover{background:var(--blue-l);transform:translateY(-1px)}
+.btn-save:disabled{background:var(--text3);cursor:not-allowed;transform:none}
+.save-msg{font-size:12px;margin-top:.5rem;min-height:1.2em;text-align:center}
 
-/* ── EMPTY STATE ── */
-.empty { text-align: center; padding: 2.5rem 1rem; color: var(--text3); }
-.empty-ico { font-size: 2.5rem; margin-bottom: .75rem; }
-.empty-txt { font-size: 13px; line-height: 1.6; }
+/* BOLLETTA ITEM */
+.boll-item{background:var(--bg);border:1px solid var(--border);border-radius:12px;padding:.9rem 1rem;display:flex;align-items:flex-start;gap:.75rem;margin-bottom:.5rem;transition:box-shadow .2s}
+.boll-item:hover{box-shadow:var(--shadow)}
+.boll-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;margin-top:2px}
+.boll-ico.luce{background:var(--amber-p)}.boll-ico.gas{background:var(--blue-p)}
+.boll-info{flex:1;min-width:0}
+.boll-top{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px}
+.boll-det{font-size:11px;color:var(--text2);line-height:1.6}
+.boll-right{text-align:right;flex-shrink:0}
+.boll-euro{font-family:'Fraunces',serif;font-size:1.1rem;font-weight:700}
+.boll-euro.luce{color:var(--amber-d)}.boll-euro.gas{color:var(--blue-l)}
+.boll-kwh{font-size:11px;color:var(--text2)}
+.boll-giudizio{font-size:10px;padding:2px 7px;border-radius:99px;font-weight:600;margin-top:4px;display:inline-block}
+.boll-giudizio.ok{background:var(--green-p);color:var(--green);border:1px solid #a0d4b8}
+.boll-giudizio.warn{background:#fff3cd;color:#7a5c00;border:1px solid #e8d080}
+.boll-giudizio.bad{background:var(--red-p);color:var(--red);border:1px solid #e4a09a}
+.del-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:0 4px;flex-shrink:0;transition:color .2s;margin-top:2px}
+.del-btn:hover{color:var(--red)}
 
-/* ── BADGE ── */
-.badge {
-  display: inline-block; font-size: 10px; padding: 2px 8px;
-  border-radius: 99px; font-weight: 500; letter-spacing: .04em;
-}
-.badge-luce { background: rgba(245,158,11,.15); color: var(--amber); border: 1px solid rgba(245,158,11,.3); }
-.badge-gas  { background: rgba(59,130,246,.15);  color: var(--blue-l); border: 1px solid rgba(59,130,246,.3); }
+/* BADGE */
+.badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:99px;font-weight:600}
+.bl{background:var(--amber-p);color:var(--amber-d);border:1px solid #e8c870}
+.bg{background:var(--blue-p);color:var(--blue);border:1px solid #aac6e4}
 
-/* ── TOGGLE ── */
-.toggle-row { display: flex; gap: 6px; margin-bottom: 1rem; }
-.toggle-btn {
-  flex: 1; padding: 7px 4px; text-align: center;
-  border: 1px solid var(--border); border-radius: 8px;
-  background: none; color: var(--text2);
-  font-family: 'DM Mono', monospace; font-size: 11px;
-  cursor: pointer; transition: all .2s;
-}
-.toggle-btn.sel-luce { background: rgba(245,158,11,.15); color: var(--amber); border-color: rgba(245,158,11,.4); }
-.toggle-btn.sel-gas  { background: rgba(59,130,246,.15);  color: var(--blue-l); border-color: rgba(59,130,246,.4); }
+/* INFO BOX */
+.info-box{background:var(--amber-p);border:1px solid #e8c870;border-radius:12px;padding:1rem 1.25rem;font-size:13px;color:var(--text);line-height:1.7;margin-bottom:1rem}
+.info-box strong{display:block;margin-bottom:.3rem;font-weight:600}
+.info-box a{color:var(--amber-d);text-decoration:none;font-weight:500}
 
-/* ── INSTALL BANNER ── */
-.install-banner {
-  display: none;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 12px; padding: .85rem 1rem;
-  margin-bottom: 1rem;
-  align-items: center; gap: .75rem;
-}
-.install-banner.show { display: flex; }
-.install-text { flex: 1; font-size: 12px; color: var(--text2); line-height: 1.5; }
-.install-btn {
-  background: var(--amber); color: var(--bg);
-  border: none; border-radius: 8px; padding: 7px 14px;
-  font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700;
-  cursor: pointer; flex-shrink: 0;
-}
+/* LOADING */
+.loading{text-align:center;padding:2rem;color:var(--text2);font-size:13px}
+.spinner{display:inline-block;width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--amber);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:.5rem}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-/* ── SCROLLBAR ── */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+/* EMPTY */
+.empty{text-align:center;padding:2.5rem 1rem}
+.empty-ico{font-size:2.5rem;margin-bottom:.75rem}
+.empty-txt{font-size:13px;color:var(--text2);line-height:1.7;font-weight:300}
 
-/* ── BOTTOM NAV (mobile) ── */
-.bottom-nav {
-  background: var(--bg2); border-top: 1px solid var(--border);
-  display: flex; flex-shrink: 0;
-}
-.bnav-btn {
-  flex: 1; padding: .75rem .5rem;
-  background: none; border: none;
-  color: var(--text3); cursor: pointer;
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-  font-family: 'DM Mono', monospace; font-size: 10px;
-  transition: color .2s;
-}
-.bnav-btn.active { color: var(--amber); }
-.bnav-ico { font-size: 1.2rem; }
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+
+/* INSTALL BANNER */
+.inst-banner{display:none;background:var(--blue-p);border:1px solid #aac6e4;border-radius:12px;padding:.85rem 1rem;margin-bottom:1rem;align-items:center;gap:.75rem}
+.inst-banner.show{display:flex}
+.inst-text{flex:1;font-size:12px;color:var(--blue);line-height:1.5}
+.btn-inst{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0}
 </style>
 </head>
 <body>
 
 <!-- ══ LOGIN ══ -->
-<div id="login-screen">
-  <div class="login-card">
-    <div class="login-logo">GioKri<span>.</span>Monitor</div>
-    <div class="login-sub">Accesso riservato ai clienti GioKri Life</div>
-    <div class="login-label">Email</div>
-    <input class="login-input" type="email" id="l-email" placeholder="tuaemail@esempio.it" autocomplete="email">
-    <div class="login-label">Password</div>
-    <input class="login-input" type="password" id="l-pwd" placeholder="••••••••" autocomplete="current-password">
-    <button class="login-btn" onclick="doLogin()">Accedi →</button>
-    <div class="login-err" id="login-err"></div>
-    <div style="margin-top:1.5rem;font-size:11px;color:var(--text3);text-align:center;line-height:1.6">
-      Accesso fornito da GioKri Life Consulenti<br>
-      <a href="mailto:giokrilife@gmail.com" style="color:var(--amber);text-decoration:none">giokrilife@gmail.com</a>
+<div class="screen show" id="scr-login">
+  <div class="auth-card">
+    <div class="auth-logo">GioKri<span>.</span>Monitor</div>
+    <div class="auth-sub">Monitoraggio consumi energetici — Area clienti</div>
+    <div class="lbl">Email</div>
+    <input class="inp" type="email" id="l-email" placeholder="tuaemail@esempio.it" autocomplete="email">
+    <div class="lbl">Password</div>
+    <input class="inp" type="password" id="l-pwd" placeholder="••••••••" autocomplete="current-password">
+    <button class="btn-primary" id="btn-login" onclick="doLogin()">Accedi →</button>
+    <div class="auth-err" id="login-err"></div>
+    <div class="auth-switch">Non hai un account? <button class="btn-link" onclick="showRegister()">Registrati</button></div>
+    <div class="auth-footer">
+      GioKri Life Consulenti<br>
+      <a href="mailto:giokrilife@gmail.com">giokrilife@gmail.com</a> · <a href="tel:+393271160053">+39 327 116 0053</a>
     </div>
+  </div>
+</div>
+
+<!-- ══ REGISTRAZIONE ══ -->
+<div class="screen" id="scr-register">
+  <div class="auth-card">
+    <div class="auth-logo">GioKri<span>.</span>Monitor</div>
+    <div class="auth-sub">Crea il tuo account gratuito</div>
+    <div class="lbl">Nome e Cognome</div>
+    <input class="inp" type="text" id="r-nome" placeholder="Mario Rossi">
+    <div class="lbl">Email</div>
+    <input class="inp" type="email" id="r-email" placeholder="tuaemail@esempio.it">
+    <div class="lbl">Password (min. 6 caratteri)</div>
+    <input class="inp" type="password" id="r-pwd" placeholder="Scegli una password">
+    <div class="lbl">Tipo utenza principale</div>
+    <select class="sel" id="r-utenza">
+      <option value="Domestica">🏠 Domestica</option>
+      <option value="Condominio">🏢 Condominio</option>
+      <option value="Business">🏭 Business / Azienda</option>
+      <option value="Altri usi">⚡ Altri usi</option>
+    </select>
+    <button class="btn-primary" id="btn-register" onclick="doRegister()">Crea account →</button>
+    <div class="auth-err" id="reg-err"></div>
+    <div class="auth-ok"  id="reg-ok"></div>
+    <div class="auth-switch">Hai già un account? <button class="btn-link" onclick="showLogin()">Accedi</button></div>
   </div>
 </div>
 
 <!-- ══ APP ══ -->
 <div id="app">
-
-  <!-- Header -->
-  <div class="app-header">
-    <div class="app-logo">GioKri<span>.</span>Monitor</div>
-    <div class="user-badge">
-      <div class="user-dot"></div>
-      <span id="user-name">—</span>
-      <button class="logout-btn" onclick="doLogout()">esci</button>
+  <div class="hdr">
+    <div class="hdr-logo">GioKri<span>.</span>Monitor</div>
+    <div class="hdr-r">
+      <div class="chip"><div class="udot"></div><span id="user-name">—</span></div>
+      <button class="btn-out" onclick="doLogout()">Esci</button>
     </div>
   </div>
 
-  <!-- Body -->
   <div class="app-body">
 
-    <!-- Install banner -->
-    <div class="install-banner" id="install-banner">
-      <div class="install-text">📱 Installa l'app sul tuo telefono per accedervi sempre, anche offline.</div>
-      <button class="install-btn" id="install-btn">Installa</button>
+    <div class="inst-banner" id="inst-banner">
+      <div class="inst-text">📱 <strong>Installa l'app</strong> sulla schermata Home per accedervi sempre.</div>
+      <button class="btn-inst" id="inst-btn">Installa</button>
     </div>
 
-    <!-- Tabs -->
     <div class="tabs">
-      <button class="tab active" onclick="switchTab('dashboard')">Dashboard</button>
-      <button class="tab" onclick="switchTab('inserisci')">+ Bolletta</button>
-      <button class="tab" onclick="switchTab('storico')">Storico</button>
+      <button class="tab active" onclick="showTab('dashboard')">📊 Dashboard</button>
+      <button class="tab" onclick="showTab('inserisci')">+ Bolletta</button>
+      <button class="tab" onclick="showTab('storico')">📋 Storico</button>
     </div>
 
-    <!-- ── DASHBOARD ── -->
-    <div class="tab-content active" id="tab-dashboard">
-
-      <!-- Toggle luce/gas -->
-      <div class="toggle-row">
-        <button class="toggle-btn sel-luce" id="tog-luce" onclick="selToggle('Luce')">💡 Luce</button>
-        <button class="toggle-btn" id="tog-gas" onclick="selToggle('Gas')">🔥 Gas</button>
-        <button class="toggle-btn" id="tog-all" onclick="selToggle('Tutti')">⚡ Tutti</button>
+    <!-- DASHBOARD -->
+    <div class="pane active" id="pane-dashboard">
+      <div class="tgl-row">
+        <button class="tgl ta" id="tgl-Luce"  onclick="selTgl('Luce')">💡 Luce</button>
+        <button class="tgl"    id="tgl-Gas"   onclick="selTgl('Gas')">🔥 Gas</button>
+        <button class="tgl"    id="tgl-Tutti" onclick="selTgl('Tutti')">⚡ Tutti</button>
       </div>
 
-      <!-- KPI -->
-      <div class="kpi-grid" id="kpi-grid">
-        <div class="kpi luce">
-          <div class="card-label">Spesa totale</div>
-          <div class="kpi-val" id="kpi-spesa">—</div>
-          <div class="kpi-lbl">anno corrente</div>
-        </div>
-        <div class="kpi gas">
-          <div class="card-label">Consumi totali</div>
-          <div class="kpi-val" id="kpi-cons">—</div>
-          <div class="kpi-lbl" id="kpi-cons-lbl">kWh / Smc</div>
-        </div>
-        <div class="kpi saving">
-          <div class="card-label">Media mensile</div>
-          <div class="kpi-val" id="kpi-media">—</div>
-          <div class="kpi-lbl">€/mese</div>
-        </div>
-        <div class="kpi trend">
-          <div class="card-label">vs anno prec.</div>
-          <div class="kpi-val" id="kpi-trend">—</div>
-          <div class="kpi-lbl" id="kpi-trend-lbl">variazione %</div>
-        </div>
+      <div class="kpi-grid">
+        <div class="kpi k-a"><div class="kpi-lbl">Spesa totale</div><div class="kpi-val" id="kpi-spesa">—</div><div class="kpi-sub">anno corrente</div></div>
+        <div class="kpi k-b"><div class="kpi-lbl">Consumi totali</div><div class="kpi-val" id="kpi-cons">—</div><div class="kpi-sub" id="kpi-u">kWh/Smc</div></div>
+        <div class="kpi k-g"><div class="kpi-lbl">Media mensile</div><div class="kpi-val" id="kpi-med">—</div><div class="kpi-sub">€/mese</div></div>
+        <div class="kpi k-r"><div class="kpi-lbl">vs anno prec.</div><div class="kpi-val" id="kpi-trend">—</div><div class="kpi-sub" id="kpi-tl">variazione</div></div>
       </div>
 
-      <!-- Grafico spesa -->
+      <!-- Giudizio -->
+      <div id="giudizio-box"></div>
+
       <div class="card">
         <div class="card-title">Spesa mensile (€)</div>
-        <div class="chart-wrap"><canvas id="chart-spesa"></canvas></div>
-        <div style="display:flex;gap:12px;font-size:11px;color:var(--text2);margin-top:4px;flex-wrap:wrap">
-          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--amber);display:inline-block"></span>Anno corrente</span>
-          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:2px;background:var(--text3);display:inline-block"></span>Anno precedente</span>
+        <div class="chart-wrap"><canvas id="ch-spesa"></canvas></div>
+        <div class="legend">
+          <span><i style="background:var(--amber)"></i>Anno corrente</span>
+          <span><i style="background:var(--text3)"></i>Anno precedente</span>
         </div>
       </div>
 
-      <!-- Grafico consumi -->
       <div class="card">
-        <div class="card-title">Consumi mensili (kWh / Smc)</div>
-        <div class="chart-wrap"><canvas id="chart-cons"></canvas></div>
+        <div class="card-title">Consumi mensili</div>
+        <div class="chart-wrap"><canvas id="ch-cons"></canvas></div>
       </div>
 
+      <div class="card">
+        <div class="card-title">Tariffa €/kWh (trend)</div>
+        <div class="chart-wrap"><canvas id="ch-tar"></canvas></div>
+      </div>
+
+      <div class="info-box">
+        <strong>🤝 Vuoi cambiare fornitore?</strong>
+        Contatta <strong>GioKri Life Consulenti</strong> per un'analisi personalizzata.<br>
+        <a href="mailto:giokrilife@gmail.com">giokrilife@gmail.com</a> · <a href="tel:+393271160053">+39 327 116 0053</a>
+      </div>
     </div>
 
-    <!-- ── INSERISCI ── -->
-    <div class="tab-content" id="tab-inserisci">
+    <!-- INSERISCI -->
+    <div class="pane" id="pane-inserisci">
       <div class="card">
         <div class="card-title">Nuova bolletta</div>
-        <div class="form-row">
-          <div class="form-group">
-            <div class="form-label">Tipo</div>
-            <select class="form-select" id="f-tipo">
+
+        <div class="sec-lbl">Dati utenza</div>
+        <div class="form-grid">
+          <div class="fg">
+            <div class="fg-lbl">Tipo utenza</div>
+            <select class="fg-sel" id="f-utenza">
+              <option>Domestica</option><option>Condominio</option>
+              <option>Business</option><option>Altri usi</option>
+            </select>
+          </div>
+          <div class="fg">
+            <div class="fg-lbl">Tipo fornitura</div>
+            <select class="fg-sel" id="f-tipo">
               <option value="Luce">💡 Luce</option>
               <option value="Gas">🔥 Gas</option>
             </select>
           </div>
-          <div class="form-group">
-            <div class="form-label">Mese / Anno</div>
-            <input type="month" class="form-input" id="f-mese">
+        </div>
+
+        <div class="sec-lbl" style="margin-top:.5rem">Periodo</div>
+        <div class="form-grid">
+          <div class="fg">
+            <div class="fg-lbl">Mese / Anno</div>
+            <input type="month" class="fg-inp" id="f-mese">
+          </div>
+          <div class="fg">
+            <div class="fg-lbl">Frequenza</div>
+            <select class="fg-sel" id="f-freq">
+              <option>Mensile</option><option>Bimensile</option>
+            </select>
           </div>
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <div class="form-label">Consumi (kWh o Smc)</div>
-            <input type="number" class="form-input" id="f-consumi" placeholder="es. 320" min="0" step="0.01">
+
+        <div class="sec-lbl" style="margin-top:.5rem">Consumi e importo</div>
+        <div class="form-grid">
+          <div class="fg">
+            <div class="fg-lbl">Consumi (kWh o Smc)</div>
+            <input type="number" class="fg-inp" id="f-cons" placeholder="es. 320" min="0" step="0.01">
           </div>
-          <div class="form-group">
-            <div class="form-label">Importo totale (€)</div>
-            <input type="number" class="form-input" id="f-importo" placeholder="es. 128.80" min="0" step="0.01">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <div class="form-label">Tariffa (€/kWh o €/Smc)</div>
-            <input type="number" class="form-input" id="f-tariffa" placeholder="es. 0.1882" min="0" step="0.0001">
-          </div>
-          <div class="form-group">
-            <div class="form-label">Quota fissa (€/mese)</div>
-            <input type="number" class="form-input" id="f-quota" placeholder="es. 10.00" min="0" step="0.01">
+          <div class="fg">
+            <div class="fg-lbl">Importo totale (€)</div>
+            <input type="number" class="fg-inp" id="f-imp" placeholder="es. 128.80" min="0" step="0.01">
           </div>
         </div>
-        <div class="form-group full" style="margin-bottom:.75rem">
-          <div class="form-label">Note (opzionale)</div>
-          <input type="text" class="form-input" id="f-note" placeholder="es. conguaglio, stima...">
+
+        <div class="sec-lbl" style="margin-top:.5rem">Tariffa (dallo Scontrino dell'energia)</div>
+        <div class="form-grid">
+          <div class="fg">
+            <div class="fg-lbl">Tariffa vendita (€/kWh o €/Smc)</div>
+            <input type="number" class="fg-inp" id="f-tar" placeholder="es. 0.1882" min="0" step="0.0001">
+          </div>
+          <div class="fg">
+            <div class="fg-lbl">Tipo tariffa</div>
+            <select class="fg-sel" id="f-tipotar">
+              <option>Fissa</option><option>Indicizzata (PUN/TTF)</option>
+            </select>
+          </div>
+          <div class="fg">
+            <div class="fg-lbl">Quota fissa (€/mese)</div>
+            <input type="number" class="fg-inp" id="f-quota" placeholder="es. 10.00" min="0" step="0.01">
+          </div>
+          <div class="fg">
+            <div class="fg-lbl">Consumi annui (kWh/Smc)</div>
+            <input type="number" class="fg-inp" id="f-consann" placeholder="es. 2400" min="0">
+          </div>
         </div>
-        <button class="btn-add" onclick="aggiungiBolletta()">+ Salva bolletta</button>
+
+        <div class="fg full" style="margin-bottom:.75rem">
+          <div class="fg-lbl">Note (opzionale)</div>
+          <input type="text" class="fg-inp" id="f-note" placeholder="es. conguaglio, lettura stimata...">
+        </div>
+
+        <button class="btn-save" id="btn-salva" onclick="salvaBolletta()">Salva bolletta →</button>
+        <div class="save-msg" id="save-msg"></div>
+      </div>
+
+      <div class="info-box">
+        <strong>📋 Dove trovo tariffa e quota fissa?</strong>
+        Nello <em>"Scontrino dell'energia"</em> della bolletta:<br>
+        · Tariffa → <em>Quota per consumi</em> → "di cui spesa per la vendita di energia"<br>
+        · Quota fissa → <em>Quota fissa</em> → "di cui spesa per la vendita di energia"
       </div>
     </div>
 
-    <!-- ── STORICO ── -->
-    <div class="tab-content" id="tab-storico">
+    <!-- STORICO -->
+    <div class="pane" id="pane-storico">
       <div class="card">
         <div class="card-title">Storico bollette</div>
         <div id="storico-list"></div>
       </div>
     </div>
 
-  </div><!-- end app-body -->
-</div><!-- end app -->
+  </div>
+</div>
 
 <script>
-// ══════════════════════════════════════════
-// UTENTI (email:password — modifica qui)
-// ══════════════════════════════════════════
-const UTENTI = {
-  'giokrilife@gmail.com': { pwd: 'giokri2026', nome: 'GioKri Life' },
-  'cliente1@gmail.com':   { pwd: 'cliente001', nome: 'Mario Rossi' },
-  'cliente2@gmail.com':   { pwd: 'cliente002', nome: 'Elena Bianchi' },
-  'cliente3@gmail.com':   { pwd: 'cliente003', nome: 'Bar Da Mario' },
-};
+// ════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════
+const API = 'https://script.google.com/macros/s/AKfycby0m0TClzkxTOElwRSlOb1v2M1t6xxZ2hcPqsiN8vHPvxrOKOZ7iT43gmPX4wGkOFw3/exec';
+const LS_KEY = 'gkm_session';
 
-// ══════════════════════════════════════════
+// ════════════════════════════════════════
 // STATE
-// ══════════════════════════════════════════
-let currentUser = null;
-let filtro = 'Luce';
-let chartSpesa = null;
-let chartCons = null;
+// ════════════════════════════════════════
+let ME = null, filtro = 'Luce', bollette = [];
+let cSpesa = null, cCons = null, cTar = null;
 let deferredPrompt = null;
 
-// ══════════════════════════════════════════
-// LOGIN / LOGOUT
-// ══════════════════════════════════════════
-function doLogin() {
+// ════════════════════════════════════════
+// API CALLS
+// ════════════════════════════════════════
+async function apiPost(params) {
+  const body = new URLSearchParams(params);
+  const res = await fetch(API, {
+    method: 'POST', mode: 'no-cors',
+    headers: {'Content-Type':'application/x-www-form-urlencoded'},
+    body: body.toString()
+  });
+  // no-cors non restituisce il body — usiamo GET per leggere
+  return {status:'ok'};
+}
+
+async function apiGet(params) {
+  const url = API + '?' + new URLSearchParams(params).toString();
+  const res = await fetch(url);
+  return res.json();
+}
+
+// ════════════════════════════════════════
+// SCREENS
+// ════════════════════════════════════════
+function showLogin() {
+  document.getElementById('scr-register').classList.remove('show');
+  document.getElementById('scr-login').classList.add('show');
+}
+function showRegister() {
+  document.getElementById('scr-login').classList.remove('show');
+  document.getElementById('scr-register').classList.add('show');
+}
+
+// ════════════════════════════════════════
+// LOGIN
+// ════════════════════════════════════════
+async function doLogin() {
   const email = document.getElementById('l-email').value.trim().toLowerCase();
   const pwd   = document.getElementById('l-pwd').value;
   const err   = document.getElementById('login-err');
+  const btn   = document.getElementById('btn-login');
 
-  const user = UTENTI[email];
-  if (!user || user.pwd !== pwd) {
-    err.textContent = 'Email o password non corretti.';
-    return;
-  }
+  if (!email || !pwd) { err.textContent = '⚠️ Inserisci email e password.'; return; }
 
-  currentUser = { email, nome: user.nome };
-  localStorage.setItem('gk_user', JSON.stringify(currentUser));
-
+  btn.disabled = true; btn.textContent = 'Accesso in corso...';
   err.textContent = '';
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('app').classList.add('visible');
-  document.getElementById('user-name').textContent = user.nome;
 
-  renderAll();
+  try {
+    const r = await apiGet({azione:'login', email, password:pwd});
+    if (r.status === 'ok') {
+      ME = {email, nome: r.nome, utenza: r.utenza};
+      localStorage.setItem(LS_KEY, JSON.stringify(ME));
+      avvia();
+    } else {
+      err.textContent = '❌ ' + (r.msg || 'Credenziali non corrette.');
+    }
+  } catch(e) {
+    err.textContent = '❌ Errore di connessione. Riprova.';
+  }
+  btn.disabled = false; btn.textContent = 'Accedi →';
+}
+
+// ════════════════════════════════════════
+// REGISTRAZIONE
+// ════════════════════════════════════════
+async function doRegister() {
+  const nome   = document.getElementById('r-nome').value.trim();
+  const email  = document.getElementById('r-email').value.trim().toLowerCase();
+  const pwd    = document.getElementById('r-pwd').value;
+  const utenza = document.getElementById('r-utenza').value;
+  const err    = document.getElementById('reg-err');
+  const ok     = document.getElementById('reg-ok');
+  const btn    = document.getElementById('btn-register');
+
+  err.textContent = ''; ok.textContent = '';
+
+  if (!nome)           { err.textContent = '⚠️ Inserisci il tuo nome.'; return; }
+  if (!email)          { err.textContent = '⚠️ Inserisci la tua email.'; return; }
+  if (pwd.length < 6)  { err.textContent = '⚠️ Password di almeno 6 caratteri.'; return; }
+
+  btn.disabled = true; btn.textContent = 'Registrazione in corso...';
+
+  try {
+    const r = await apiGet({azione:'registra', nome, email, password:pwd, utenza});
+    if (r.status === 'ok') {
+      ok.textContent = '✅ Account creato! Accedi con le tue credenziali.';
+      setTimeout(() => showLogin(), 2000);
+    } else {
+      err.textContent = '❌ ' + (r.msg || 'Errore durante la registrazione.');
+    }
+  } catch(e) {
+    err.textContent = '❌ Errore di connessione. Riprova.';
+  }
+  btn.disabled = false; btn.textContent = 'Crea account →';
+}
+
+// ════════════════════════════════════════
+// AVVIA APP
+// ════════════════════════════════════════
+function avvia() {
+  document.getElementById('scr-login').classList.remove('show');
+  document.getElementById('scr-register').classList.remove('show');
+  document.getElementById('app').classList.add('visible');
+  document.getElementById('user-name').textContent = ME.nome;
+  caricaBollette();
 }
 
 function doLogout() {
-  currentUser = null;
-  localStorage.removeItem('gk_user');
-  document.getElementById('login-screen').style.display = 'flex';
+  ME = null; bollette = [];
+  localStorage.removeItem(LS_KEY);
   document.getElementById('app').classList.remove('visible');
+  document.getElementById('l-pwd').value = '';
+  showLogin();
 }
 
-// Auto-login se sessione salvata
-window.addEventListener('load', () => {
-  const saved = localStorage.getItem('gk_user');
-  if (saved) {
-    try {
-      currentUser = JSON.parse(saved);
-      if (UTENTI[currentUser.email]) {
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('app').classList.add('visible');
-        document.getElementById('user-name').textContent = currentUser.nome;
-        renderAll();
-      }
-    } catch(e) {}
+// Auto-login
+window.addEventListener('load', async () => {
+  document.getElementById('l-pwd').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+  document.getElementById('r-pwd').addEventListener('keydown', e => { if(e.key==='Enter') doRegister(); });
+  const s = localStorage.getItem(LS_KEY);
+  if (s) {
+    try { ME = JSON.parse(s); avvia(); } catch(e) {}
   }
 });
 
-// ══════════════════════════════════════════
-// DATI (localStorage per utente)
-// ══════════════════════════════════════════
-function getKey() { return `gk_bollette_${currentUser.email}`; }
-
-function getBollette() {
-  try {
-    const raw = localStorage.getItem(getKey());
-    return raw ? JSON.parse(raw) : [];
-  } catch(e) { return []; }
-}
-
-function saveBollette(arr) {
-  localStorage.setItem(getKey(), JSON.stringify(arr));
-}
-
-// ══════════════════════════════════════════
+// ════════════════════════════════════════
 // TABS
-// ══════════════════════════════════════════
-function switchTab(id) {
-  document.querySelectorAll('.tab').forEach((b,i) => b.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  const idx = ['dashboard','inserisci','storico'].indexOf(id);
-  document.querySelectorAll('.tab')[idx].classList.add('active');
-  document.getElementById('tab-' + id).classList.add('active');
-  if (id === 'dashboard') renderDashboard();
+// ════════════════════════════════════════
+function showTab(id) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+  const tabs = ['dashboard','inserisci','storico'];
+  document.querySelectorAll('.tab')[tabs.indexOf(id)].classList.add('active');
+  document.getElementById('pane-'+id).classList.add('active');
   if (id === 'storico') renderStorico();
 }
 
-// ══════════════════════════════════════════
-// TOGGLE LUCE/GAS/TUTTI
-// ══════════════════════════════════════════
-function selToggle(val) {
-  filtro = val;
-  ['Luce','Gas','Tutti'].forEach(v => {
-    const id = 'tog-' + v.toLowerCase();
-    const el = document.getElementById(id);
+// ════════════════════════════════════════
+// TOGGLE
+// ════════════════════════════════════════
+function selTgl(v) {
+  filtro = v;
+  ['Luce','Gas','Tutti'].forEach(x => {
+    const el = document.getElementById('tgl-'+x);
     if (!el) return;
-    el.classList.remove('sel-luce','sel-gas');
-    if (v === val) {
-      if (v === 'Luce') el.classList.add('sel-luce');
-      else if (v === 'Gas') el.classList.add('sel-gas');
-      else { el.style.background='rgba(100,100,100,.2)'; el.style.color='var(--text)'; }
-    } else {
-      el.style.background = '';
-      el.style.color = '';
+    el.classList.remove('ta','tb','tt');
+    if (x === v) el.classList.add(v==='Luce'?'ta':v==='Gas'?'tb':'tt');
+  });
+  renderDash();
+}
+
+// ════════════════════════════════════════
+// CARICA BOLLETTE DA SHEET
+// ════════════════════════════════════════
+async function caricaBollette() {
+  document.getElementById('pane-dashboard').innerHTML = '<div class="loading"><div class="spinner"></div><br>Carico i tuoi dati...</div>';
+  try {
+    const r = await apiGet({azione:'leggi_bollette', email: ME.email});
+    if (r.status === 'ok') {
+      bollette = r.bollette.map((b,i) => ({
+        id: i,
+        tipo:    b['Tipo Bolletta'] || '',
+        utenza:  b['Tipo Utenza']   || '',
+        mese:    b['Mese']          || '',
+        freq:    b['Frequenza']     || '',
+        consumi: parseFloat(b['Consumi (kWh/Smc)']) || 0,
+        importo: parseFloat(b['Importo (€)'])       || 0,
+        tariffa: parseFloat(b['Tariffa (€/kWh o Smc)']) || 0,
+        tipotar: b['Tipo Tariffa']       || '',
+        quota:   parseFloat(b['Quota Fissa (€/mese)']) || 0,
+        consann: parseFloat(b['Consumi Annui']) || 0,
+        note:    b['Note']          || '',
+        giudizio:b['Giudizio']      || ''
+      }));
     }
-  });
-  renderDashboard();
-}
-
-// ══════════════════════════════════════════
-// AGGIUNGI BOLLETTA
-// ══════════════════════════════════════════
-function aggiungiBolletta() {
-  const tipo    = document.getElementById('f-tipo').value;
-  const mese    = document.getElementById('f-mese').value;
-  const consumi = parseFloat(document.getElementById('f-consumi').value);
-  const importo = parseFloat(document.getElementById('f-importo').value);
-  const tariffa = parseFloat(document.getElementById('f-tariffa').value) || null;
-  const quota   = parseFloat(document.getElementById('f-quota').value) || null;
-  const note    = document.getElementById('f-note').value.trim();
-
-  if (!mese || isNaN(consumi) || isNaN(importo)) {
-    alert('Inserisci almeno mese, consumi e importo.');
-    return;
+  } catch(e) {
+    bollette = [];
   }
-
-  const arr = getBollette();
-  arr.push({ id: Date.now(), tipo, mese, consumi, importo, tariffa, quota, note });
-  arr.sort((a,b) => a.mese.localeCompare(b.mese));
-  saveBollette(arr);
-
-  ['f-mese','f-consumi','f-importo','f-tariffa','f-quota','f-note'].forEach(id => {
-    document.getElementById(id).value = '';
-  });
-
-  alert('Bolletta salvata!');
-  switchTab('dashboard');
+  // Ripristina dashboard
+  document.getElementById('pane-dashboard').innerHTML = `
+    <div class="tgl-row">
+      <button class="tgl ta" id="tgl-Luce" onclick="selTgl('Luce')">💡 Luce</button>
+      <button class="tgl" id="tgl-Gas" onclick="selTgl('Gas')">🔥 Gas</button>
+      <button class="tgl" id="tgl-Tutti" onclick="selTgl('Tutti')">⚡ Tutti</button>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi k-a"><div class="kpi-lbl">Spesa totale</div><div class="kpi-val" id="kpi-spesa">—</div><div class="kpi-sub">anno corrente</div></div>
+      <div class="kpi k-b"><div class="kpi-lbl">Consumi totali</div><div class="kpi-val" id="kpi-cons">—</div><div class="kpi-sub" id="kpi-u">kWh/Smc</div></div>
+      <div class="kpi k-g"><div class="kpi-lbl">Media mensile</div><div class="kpi-val" id="kpi-med">—</div><div class="kpi-sub">€/mese</div></div>
+      <div class="kpi k-r"><div class="kpi-lbl">vs anno prec.</div><div class="kpi-val" id="kpi-trend">—</div><div class="kpi-sub" id="kpi-tl">variazione</div></div>
+    </div>
+    <div id="giudizio-box"></div>
+    <div class="card"><div class="card-title">Spesa mensile (€)</div><div class="chart-wrap"><canvas id="ch-spesa"></canvas></div><div class="legend"><span><i style="background:var(--amber)"></i>Anno corrente</span><span><i style="background:var(--text3)"></i>Anno precedente</span></div></div>
+    <div class="card"><div class="card-title">Consumi mensili</div><div class="chart-wrap"><canvas id="ch-cons"></canvas></div></div>
+    <div class="card"><div class="card-title">Tariffa €/kWh (trend)</div><div class="chart-wrap"><canvas id="ch-tar"></canvas></div></div>
+    <div class="info-box"><strong>🤝 Vuoi cambiare fornitore?</strong>Contatta <strong>GioKri Life Consulenti</strong>.<br><a href="mailto:giokrilife@gmail.com">giokrilife@gmail.com</a> · <a href="tel:+393271160053">+39 327 116 0053</a></div>`;
+  cSpesa = null; cCons = null; cTar = null;
+  renderDash();
+  renderStorico();
 }
 
-// ══════════════════════════════════════════
-// RENDER DASHBOARD
-// ══════════════════════════════════════════
-function renderAll() { renderDashboard(); renderStorico(); }
-
-function renderDashboard() {
-  const all = getBollette();
-  const now = new Date();
-  const annoC = now.getFullYear();
+// ════════════════════════════════════════
+// DASHBOARD
+// ════════════════════════════════════════
+function renderDash() {
+  const annoC = new Date().getFullYear();
   const annoP = annoC - 1;
+  const fil  = filtro === 'Tutti' ? bollette : bollette.filter(b => b.tipo === filtro);
+  const corr = fil.filter(b => b.mese && b.mese.toString().startsWith(String(annoC)));
+  const prec = fil.filter(b => b.mese && b.mese.toString().startsWith(String(annoP)));
 
-  const filtered = filtro === 'Tutti' ? all : all.filter(b => b.tipo === filtro);
-  const corrente = filtered.filter(b => b.mese.startsWith(String(annoC)));
-  const prec     = filtered.filter(b => b.mese.startsWith(String(annoP)));
-
-  const totC = corrente.reduce((s,b) => s+b.importo, 0);
-  const totP = prec.reduce((s,b) => s+b.importo, 0);
-  const consC = corrente.reduce((s,b) => s+b.consumi, 0);
-  const mediaC = corrente.length ? totC/corrente.length : 0;
+  const totC  = corr.reduce((s,b) => s+b.importo, 0);
+  const totP  = prec.reduce((s,b) => s+b.importo, 0);
+  const consC = corr.reduce((s,b) => s+b.consumi, 0);
+  const media = corr.length ? totC/corr.length : 0;
   const delta = totP > 0 ? ((totC-totP)/totP*100) : null;
+  const unit  = filtro==='Gas' ? 'Smc' : 'kWh';
 
-  const unit = filtro === 'Gas' ? 'Smc' : filtro === 'Luce' ? 'kWh' : 'kWh/Smc';
+  setEl('kpi-spesa', totC  ? '€ '+fmt(totC)  : '—');
+  setEl('kpi-cons',  consC ? fmt(consC,0)     : '—');
+  setEl('kpi-u',     unit);
+  setEl('kpi-med',   media ? '€ '+fmt(media)  : '—');
 
-  document.getElementById('kpi-spesa').textContent = totC > 0 ? '€ ' + fmt(totC) : '—';
-  document.getElementById('kpi-cons').textContent  = consC > 0 ? fmt(consC,0) : '—';
-  document.getElementById('kpi-cons-lbl').textContent = unit;
-  document.getElementById('kpi-media').textContent = mediaC > 0 ? '€ ' + fmt(mediaC) : '—';
-
-  const trendEl = document.getElementById('kpi-trend');
-  const trendLbl = document.getElementById('kpi-trend-lbl');
-  if (delta !== null) {
-    const sign = delta > 0 ? '+' : '';
-    trendEl.textContent = sign + fmt(delta,1) + '%';
-    trendEl.style.color = delta > 0 ? 'var(--red)' : delta < 0 ? 'var(--green)' : 'var(--text)';
-    trendLbl.textContent = delta > 0 ? '↑ spesa aumentata' : '↓ spesa diminuita';
-  } else {
-    trendEl.textContent = '—';
-    trendLbl.textContent = 'nessun dato prec.';
+  const tEl  = document.getElementById('kpi-trend');
+  const tLbl = document.getElementById('kpi-tl');
+  if (tEl && delta !== null) {
+    tEl.textContent = (delta>0?'+':'')+fmt(delta,1)+'%';
+    tEl.className   = 'kpi-val '+(delta>0?'up':'down');
+    tLbl.textContent = delta>0 ? '↑ spesa aumentata' : '↓ spesa diminuita';
   }
 
-  buildCharts(filtered, annoC, annoP);
+  // Giudizio basato sull'ultima bolletta
+  renderGiudizio(fil);
+  buildCharts(fil, annoC, annoP);
 }
 
-function buildCharts(filtered, annoC, annoP) {
-  const mesi = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+function renderGiudizio(fil) {
+  const box = document.getElementById('giudizio-box');
+  if (!box || !fil.length) { if(box) box.innerHTML=''; return; }
 
-  // Dati per mese
-  const spesaC = Array(12).fill(null);
-  const spesaP = Array(12).fill(null);
-  const consC  = Array(12).fill(null);
+  // Ultima bolletta con tariffa
+  const ultima = fil.filter(b=>b.tariffa>0).slice(-1)[0];
+  if (!ultima) { box.innerHTML=''; return; }
 
-  filtered.forEach(b => {
-    const [y, m] = b.mese.split('-').map(Number);
-    const idx = m - 1;
-    if (y === annoC) {
-      spesaC[idx] = (spesaC[idx] || 0) + b.importo;
-      consC[idx]  = (consC[idx] || 0) + b.consumi;
+  const g = ultima.giudizio || calcolaGiudizio(ultima);
+  let cls='ok', ico='✅', titolo='Bolletta congrua', desc='La tua tariffa è in linea con il mercato. Nessuna azione urgente.';
+  if (g.includes('Monitora')) {
+    cls='warn'; ico='⚠️'; titolo='Monitora altre offerte';
+    desc='La tua tariffa è leggermente superiore alla media. Vale la pena confrontare le offerte disponibili.';
+  }
+  if (g.includes('Cambia')) {
+    cls='bad'; ico='🔴'; titolo='Cambia fornitore';
+    desc='La tua tariffa è significativamente superiore alla media di mercato. Contattaci per un\'analisi gratuita.';
+  }
+
+  box.innerHTML = `<div class="giudizio ${cls}">
+    <div class="ico">${ico}</div>
+    <div class="txt"><strong>${titolo}</strong><span>${desc}</span></div>
+  </div>`;
+}
+
+function calcolaGiudizio(b) {
+  const bench = b.tipo==='Gas' ? 0.85 : 0.22;
+  if (b.tariffa > bench*1.30) return 'Cambia fornitore';
+  if (b.tariffa > bench*1.15) return 'Monitora altre offerte';
+  return 'Bolletta congrua';
+}
+
+function buildCharts(fil, annoC, annoP) {
+  const mn   = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+  const spC  = Array(12).fill(null);
+  const spP  = Array(12).fill(null);
+  const coC  = Array(12).fill(null);
+  const tarC = Array(12).fill(null);
+
+  fil.forEach(b => {
+    const ms = String(b.mese||'');
+    if (!ms.includes('-')) return;
+    const [y,m] = ms.split('-').map(Number);
+    const i = m-1;
+    if (isNaN(i)||i<0||i>11) return;
+    if (y===annoC) {
+      spC[i]=(spC[i]||0)+b.importo;
+      coC[i]=(coC[i]||0)+b.consumi;
+      if (b.tariffa>0) tarC[i]=b.tariffa;
     }
-    if (y === annoP) spesaP[idx] = (spesaP[idx] || 0) + b.importo;
+    if (y===annoP) spP[i]=(spP[i]||0)+b.importo;
   });
 
-  const opts = {
-    responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { ticks: { color: '#475569', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
-      y: { ticks: { color: '#475569', font: { size: 10 }, callback: v => '€'+v }, grid: { color: 'rgba(255,255,255,0.04)' } }
-    }
+  const base={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#a09585',font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}},y:{ticks:{color:'#a09585',font:{size:10}},grid:{color:'rgba(0,0,0,0.06)'}}}};
+
+  const elS=document.getElementById('ch-spesa');
+  const elC=document.getElementById('ch-cons');
+  const elT=document.getElementById('ch-tar');
+  if(!elS||!elC||!elT)return;
+
+  if(cSpesa)cSpesa.destroy();
+  cSpesa=new Chart(elS,{type:'bar',data:{labels:mn,datasets:[
+    {label:'Corrente',data:spC,backgroundColor:'rgba(196,125,26,0.75)',borderColor:'#c47d1a',borderWidth:1.5,borderRadius:5},
+    {label:'Prec.',data:spP,backgroundColor:'rgba(160,149,133,0.4)',borderColor:'#a09585',borderWidth:1,borderRadius:5}
+  ]},options:{...base,scales:{...base.scales,y:{...base.scales.y,ticks:{...base.scales.y.ticks,callback:v=>'€'+v}}}}});
+
+  const unit=filtro==='Gas'?'Smc':'kWh';
+  if(cCons)cCons.destroy();
+  cCons=new Chart(elC,{type:'line',data:{labels:mn,datasets:[{label:'Consumi',data:coC,borderColor:'#2a5f94',backgroundColor:'rgba(42,95,148,0.1)',borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#2a5f94',tension:0.4,fill:true,spanGaps:true}]},options:{...base,scales:{...base.scales,y:{...base.scales.y,ticks:{...base.scales.y.ticks,callback:v=>v+' '+unit}}}}});
+
+  if(cTar)cTar.destroy();
+  cTar=new Chart(elT,{type:'line',data:{labels:mn,datasets:[{label:'Tariffa',data:tarC,borderColor:'#c47d1a',backgroundColor:'rgba(196,125,26,0.08)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#c47d1a',tension:0.3,fill:true,spanGaps:true}]},options:{...base,scales:{...base.scales,y:{...base.scales.y,ticks:{...base.scales.y.ticks,callback:v=>v+' €'}}}}});
+}
+
+// ════════════════════════════════════════
+// SALVA BOLLETTA → SHEET
+// ════════════════════════════════════════
+async function salvaBolletta() {
+  const cons = parseFloat(document.getElementById('f-cons').value);
+  const imp  = parseFloat(document.getElementById('f-imp').value);
+  const mese = document.getElementById('f-mese').value;
+  const msg  = document.getElementById('save-msg');
+  const btn  = document.getElementById('btn-salva');
+
+  if (!mese||isNaN(cons)||isNaN(imp)) {
+    msg.style.color='var(--red)'; msg.textContent='⚠️ Inserisci mese, consumi e importo.'; return;
+  }
+
+  btn.disabled=true; btn.textContent='Salvataggio...';
+  msg.style.color='var(--text2)'; msg.textContent='Invio in corso...';
+
+  const params = {
+    azione:'salva_bolletta',
+    email:   ME.email,
+    utenza:  document.getElementById('f-utenza').value,
+    tipo:    document.getElementById('f-tipo').value,
+    mese, freq: document.getElementById('f-freq').value,
+    consumi: cons, importo: imp,
+    tariffa: document.getElementById('f-tar').value||0,
+    tipotar: document.getElementById('f-tipotar').value,
+    quota:   document.getElementById('f-quota').value||0,
+    consann: document.getElementById('f-consann').value||0,
+    note:    document.getElementById('f-note').value||''
   };
 
-  if (chartSpesa) chartSpesa.destroy();
-  chartSpesa = new Chart(document.getElementById('chart-spesa'), {
-    type: 'bar',
-    data: {
-      labels: mesi,
-      datasets: [
-        { label: 'Anno corrente', data: spesaC, backgroundColor: 'rgba(245,158,11,0.7)', borderColor: '#f59e0b', borderWidth: 1.5, borderRadius: 4 },
-        { label: 'Anno prec.', data: spesaP, backgroundColor: 'rgba(71,85,105,0.5)', borderColor: '#475569', borderWidth: 1, borderRadius: 4 }
-      ]
-    },
-    options: { ...opts }
-  });
+  try {
+    // Invia allo sheet
+    await apiPost(params);
 
-  if (chartCons) chartCons.destroy();
-  const unit = filtro === 'Gas' ? 'Smc' : 'kWh';
-  chartCons = new Chart(document.getElementById('chart-cons'), {
-    type: 'line',
-    data: {
-      labels: mesi,
-      datasets: [
-        { label: 'Consumi', data: consC, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#3b82f6', tension: 0.4, fill: true, spanGaps: true }
-      ]
-    },
-    options: {
-      ...opts,
-      scales: {
-        x: opts.scales.x,
-        y: { ticks: { color: '#475569', font: { size: 10 }, callback: v => v+' '+unit }, grid: { color: 'rgba(255,255,255,0.04)' } }
-      }
-    }
-  });
+    // Calcola giudizio locale
+    const tar = parseFloat(params.tariffa)||0;
+    const bench = params.tipo==='Gas'?0.85:0.22;
+    let giu='Bolletta congrua';
+    if(tar>bench*1.30) giu='Cambia fornitore';
+    else if(tar>bench*1.15) giu='Monitora altre offerte';
+
+    // Aggiungi localmente
+    bollette.push({
+      id:Date.now(), tipo:params.tipo, utenza:params.utenza,
+      mese, freq:params.freq, consumi:cons, importo:imp,
+      tariffa:parseFloat(params.tariffa)||0,
+      tipotar:params.tipotar,
+      quota:parseFloat(params.quota)||0,
+      consann:parseFloat(params.consann)||0,
+      note:params.note, giudizio:giu
+    });
+    bollette.sort((a,b)=>String(a.mese).localeCompare(String(b.mese)));
+
+    msg.style.color='var(--green-l)';
+    msg.textContent='✅ Bolletta salvata! Giudizio: '+giu;
+
+    ['f-mese','f-cons','f-imp','f-tar','f-quota','f-consann','f-note'].forEach(id=>{
+      document.getElementById(id).value='';
+    });
+
+    setTimeout(()=>{ showTab('dashboard'); renderDash(); }, 1500);
+
+  } catch(e) {
+    msg.style.color='var(--red)'; msg.textContent='❌ Errore. Riprova.';
+  }
+  btn.disabled=false; btn.textContent='Salva bolletta →';
 }
 
-// ══════════════════════════════════════════
-// RENDER STORICO
-// ══════════════════════════════════════════
+// ════════════════════════════════════════
+// STORICO
+// ════════════════════════════════════════
 function renderStorico() {
-  const arr = getBollette().slice().reverse();
-  const el = document.getElementById('storico-list');
-
-  if (!arr.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-ico">📄</div><div class="empty-txt">Nessuna bolletta inserita.<br>Usa la tab "+ Bolletta" per iniziare.</div></div>';
+  const el=document.getElementById('storico-list');
+  if(!el)return;
+  const arr=[...bollette].reverse();
+  if(!arr.length){
+    el.innerHTML='<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">Nessuna bolletta ancora.<br>Vai su <strong>"+ Bolletta"</strong> per iniziare.</div></div>';
     return;
   }
-
-  el.innerHTML = arr.map((b,i) => {
-    const [y,m] = b.mese.split('-');
-    const mesi = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
-    const label = mesi[parseInt(m)-1] + ' ' + y;
-    const unit = b.tipo === 'Luce' ? 'kWh' : 'Smc';
-    return `<div class="bolletta-item">
-      <div class="boll-tipo ${b.tipo.toLowerCase()}">${b.tipo === 'Luce' ? '💡' : '🔥'}</div>
+  const mn=['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+  el.innerHTML=arr.map(b=>{
+    const ms=String(b.mese||'');
+    let label=ms;
+    if(ms.includes('-')){const[y,m]=ms.split('-');label=mn[parseInt(m)-1]+' '+y;}
+    const unit=b.tipo==='Luce'?'kWh':'Smc';
+    const g=b.giudizio||calcolaGiudizio(b);
+    const gcls=g.includes('Cambia')?'bad':g.includes('Monitora')?'warn':'ok';
+    return `<div class="boll-item">
+      <div class="boll-ico ${b.tipo.toLowerCase()}">${b.tipo==='Luce'?'💡':'🔥'}</div>
       <div class="boll-info">
-        <div class="boll-periodo">${label} <span class="badge badge-${b.tipo.toLowerCase()}">${b.tipo}</span></div>
-        <div class="boll-dettagli">${fmt(b.consumi,0)} ${unit}${b.tariffa ? ' · ' + fmt(b.tariffa,4) + ' €/'+unit : ''}${b.note ? ' · ' + b.note : ''}</div>
+        <div class="boll-top">${label} <span class="badge ${b.tipo==='Luce'?'bl':'bg'}">${b.tipo}</span></div>
+        <div class="boll-det">
+          ${fmt(b.consumi,0)} ${unit}
+          ${b.tariffa>0?' · '+fmt(b.tariffa,4)+' €/'+unit+' ('+b.tipotar+')':''}
+          ${b.quota>0?' · Q.fissa '+fmt(b.quota)+' €':''}
+          ${b.freq?' · '+b.freq:''}
+          ${b.note?' · '+b.note:''}
+        </div>
+        <span class="boll-giudizio ${gcls}">${g}</span>
       </div>
-      <div class="boll-importo">
-        <div class="boll-euro" style="color:${b.tipo==='Luce'?'var(--amber)':'var(--blue-l)'}">€ ${fmt(b.importo)}</div>
-        <div class="boll-kwh">${b.quota ? 'Q.fissa ' + fmt(b.quota) + ' €' : ''}</div>
+      <div class="boll-right">
+        <div class="boll-euro ${b.tipo.toLowerCase()}">€ ${fmt(b.importo)}</div>
+        ${b.tariffa>0&&b.consumi>0?`<div class="boll-kwh">${fmt(b.importo/b.consumi,4)} €/${unit}</div>`:''}
       </div>
-      <button class="del-btn" onclick="delBolletta(${b.id})">×</button>
     </div>`;
   }).join('');
 }
 
-function delBolletta(id) {
-  if (!confirm('Eliminare questa bolletta?')) return;
-  const arr = getBollette().filter(b => b.id !== id);
-  saveBollette(arr);
-  renderStorico();
-  renderDashboard();
-}
-
-// ══════════════════════════════════════════
-// PWA INSTALL
-// ══════════════════════════════════════════
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  deferredPrompt = e;
-  document.getElementById('install-banner').classList.add('show');
+// ════════════════════════════════════════
+// PWA
+// ════════════════════════════════════════
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();deferredPrompt=e;
+  document.getElementById('inst-banner').classList.add('show');
 });
-
-document.getElementById('install-btn').addEventListener('click', async () => {
-  if (!deferredPrompt) return;
+document.getElementById('inst-btn').addEventListener('click',async()=>{
+  if(!deferredPrompt)return;
   deferredPrompt.prompt();
-  const { outcome } = await deferredPrompt.userChoice;
-  if (outcome === 'accepted') document.getElementById('install-banner').classList.remove('show');
-  deferredPrompt = null;
+  const{outcome}=await deferredPrompt.userChoice;
+  if(outcome==='accepted')document.getElementById('inst-banner').classList.remove('show');
+  deferredPrompt=null;
 });
 
-// ══════════════════════════════════════════
+// ════════════════════════════════════════
 // UTILS
-// ══════════════════════════════════════════
-function fmt(n, d=2) {
-  if (n==null||isNaN(n)) return '—';
-  return Number(n).toLocaleString('it-IT', { minimumFractionDigits:d, maximumFractionDigits:d });
-}
+// ════════════════════════════════════════
+function fmt(n,d=2){if(n==null||isNaN(n))return'—';return Number(n).toLocaleString('it-IT',{minimumFractionDigits:d,maximumFractionDigits:d});}
+function setEl(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
 </script>
-
 </body>
 </html>
