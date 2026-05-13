@@ -407,23 +407,9 @@ let deferredPrompt = null;
 // ════════════════════════════════════════
 // API CALLS
 // ════════════════════════════════════════
-const CSV_UTENTI = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSFiztsjRF3mNvMYyT2tEb-oBkhQnWIDBFlPhSbIUmVH7uib2eKZa0uqKL9EvUzxFhwNT8ikYCSu2C-/pub?gid=1202837026&single=true&output=csv';
-
-// Legge utenti dal CSV pubblico Google Sheet
+// Login via GET allo script Google Apps Script
 async function leggiUtenti() {
-  const res = await fetch(CSV_UTENTI + '&t=' + Date.now());
-  const txt = await res.text();
-  const rows = txt.trim().split('\n').slice(1); // salta intestazione
-  return rows.map(r => {
-    const cols = r.split(',').map(c => c.trim().replace(/^"|"$/g,''));
-    return {
-      email:   (cols[0]||'').toLowerCase(),
-      pwd:     cols[1]||'',
-      nome:    cols[2]||'',
-      utenza:  cols[3]||'Domestica',
-      stato:   (cols[4]||'attivo').toLowerCase()
-    };
-  }).filter(u => u.email);
+  return []; // non usata — login diretto via apiGet
 }
 
 // POST no-cors per salvare bollette
@@ -471,18 +457,13 @@ async function doLogin() {
   err.textContent = '';
 
   try {
-    const utenti = await leggiUtenti();
-    const u = utenti.find(u => u.email === email && u.pwd === pwd);
-    if (u) {
-      if (u.stato === 'sospeso') {
-        err.textContent = '❌ Account sospeso. Contatta GioKri Life.';
-      } else {
-        ME = {email, nome: u.nome, utenza: u.utenza};
-        localStorage.setItem(LS_KEY, JSON.stringify(ME));
-        avvia();
-      }
+    const r = await apiGet({azione: 'login', email, password: pwd});
+    if (r.status === 'ok') {
+      ME = {email, nome: r.nome, utenza: r.utenza};
+      localStorage.setItem(LS_KEY, JSON.stringify(ME));
+      avvia();
     } else {
-      err.textContent = '❌ Email o password non corretti.';
+      err.textContent = '❌ ' + (r.msg || 'Email o password non corretti.');
     }
   } catch(e) {
     err.textContent = '❌ Errore di connessione. Riprova tra qualche istante.';
@@ -508,20 +489,20 @@ async function doRegister() {
   if (!email)         { err.textContent = '⚠️ Inserisci la tua email.'; return; }
   if (pwd.length < 6) { err.textContent = '⚠️ Password di almeno 6 caratteri.'; return; }
 
-  btn.disabled = true; btn.textContent = 'Invio richiesta...';
+  btn.disabled = true; btn.textContent = 'Registrazione in corso...';
 
   try {
-    // Invia richiesta di registrazione allo script
-    await apiPost({
-      azione: 'registra', nome, email, password: pwd, utenza
-    });
-
-    ok.textContent = '✅ Richiesta inviata! GioKri Life attiverà il tuo account entro 24 ore e ti contatterà via email.';
-    btn.disabled = false; btn.textContent = 'Crea account →';
+    const r = await apiGet({azione: 'registra', nome, email, password: pwd, utenza});
+    if (r.status === 'ok') {
+      ok.textContent = '✅ Account creato! Accedi subito con le tue credenziali.';
+      setTimeout(() => showLogin(), 2000);
+    } else {
+      err.textContent = '❌ ' + (r.msg || 'Errore durante la registrazione.');
+    }
   } catch(e) {
-    err.textContent = '❌ Errore. Contatta giokrilife@gmail.com per registrarti.';
-    btn.disabled = false; btn.textContent = 'Crea account →';
+    err.textContent = '❌ Errore di connessione. Contatta giokrilife@gmail.com.';
   }
+  btn.disabled = false; btn.textContent = 'Crea account →';
 }
 
 // ════════════════════════════════════════
